@@ -43,6 +43,10 @@ enum Encounter
 
 enum Data
 {
+    // Gluth
+    DATA_GLUTH_ZOMBIES_RESET,
+    DATA_ZOMBIE_STATE,
+
     DATA_HEIGAN_ERUPT,
     DATA_GOTHIK_GATE,
     DATA_SAPPHIRON_BIRTH,
@@ -69,6 +73,7 @@ enum Data64
     DATA_LADY,
     DATA_BARON,
     DATA_SIR,
+    DATA_GLUTH,
     DATA_THADDIUS,
     DATA_HEIGAN,
     DATA_FEUGEN,
@@ -92,6 +97,8 @@ enum CreaturesIds
     NPC_LADY                    = 16065,
     NPC_BARON                   = 30549,
     NPC_SIR                     = 16063,
+    NPC_GLUTH                   = 15932,
+    NPC_ZOMBIE_CHOW             = 16360, // zombie chow in Gluth's encounter
     NPC_HEIGAN                  = 15936,
     NPC_THADDIUS                = 15928,
     NPC_FEUGEN                  = 15930,
@@ -189,7 +196,10 @@ enum InstanceEvents
     EVENT_DIALOGUE_SAPPHIRON_KELTHUZAD2,
     EVENT_DIALOGUE_SAPPHIRON_LICHKING2,
     EVENT_DIALOGUE_SAPPHIRON_KELTHUZAD3,
-    EVENT_DIALOGUE_SAPPHIRON_KELTHUZAD4
+    EVENT_DIALOGUE_SAPPHIRON_KELTHUZAD4,
+    
+    // Gluth
+    EVENT_GLUTH_ZOMBIE_BEHAVIOR = 10495 // event that will trigger the zombies' behavior change after Decimate.
 };
 
 enum InstanceTexts
@@ -210,6 +220,14 @@ enum InstanceTexts
     // Lich King
     SAY_DIALOGUE_SAPPHIRON_LICH_KING  = 1,
     SAY_DIALOGUE_SAPPHIRON_LICH_KING2 = 2
+};
+
+enum InstanceStates
+{
+    // Zombie Chow in Gluth Encounter
+    STATE_ZOMBIE_NORMAL = 1,
+    STATE_ZOMBIE_DECIMATED = 2,
+    STATE_ZOMBIE_TOBE_EATEN = 3
 };
 
 /*

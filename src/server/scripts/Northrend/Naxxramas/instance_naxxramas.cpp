@@ -182,6 +182,12 @@ class instance_naxxramas : public InstanceMapScript
                     case NPC_SIR:
                         SirGUID = creature->GetGUID();
                         break;
+                    case NPC_GLUTH:
+                        GluthGUID = creature->GetGUID();
+                        break;
+                    case NPC_ZOMBIE_CHOW:
+                        ZombieChowGUIDs.push_back(creature->GetGUID());
+                        break;
                     case NPC_HEIGAN:
                         HeiganGUID = creature->GetGUID();
                         break;
@@ -217,6 +223,23 @@ class instance_naxxramas : public InstanceMapScript
                             events.ScheduleEvent(EVENT_THADDIUS_RESET, 5 * IN_MILLISECONDS);
                         else
                             events.ScheduleEvent(EVENT_THADDIUS_RESET, 30 * IN_MILLISECONDS);
+                        break;
+                    case EVENT_GLUTH_ZOMBIE_BEHAVIOR: // handles the change in the zombies' behavior after a decimate.
+                    {
+                        Creature* gluth = instance->GetCreature(GluthGUID);
+                        if (!gluth)
+                            break;
+                        
+                        Creature* zombie = nullptr;
+                        for (GuidList::iterator itr = ZombieChowGUIDs.begin(); itr != ZombieChowGUIDs.end(); ++itr)
+                        {
+                            zombie = ObjectAccessor::GetCreature(*gluth, *itr);
+                            if (zombie)
+                                zombie->AI()->SetData(DATA_ZOMBIE_STATE, STATE_ZOMBIE_DECIMATED);
+                        }
+                        break;
+                    }
+                    default:
                         break;
                 }
             }
@@ -315,13 +338,20 @@ class instance_naxxramas : public InstanceMapScript
                 }
 
                 if (Creature* creature = unit->ToCreature())
-                    if (creature->GetEntry() == NPC_BIGGLESWORTH)
+                {
+                    switch (creature->GetEntry())
                     {
-                        // Loads Kel'Thuzad's grid. We need this as he must be active in order for his texts to work.
-                        instance->LoadGrid(3749.67f, -5114.06f);
-                        if (Creature* kelthuzad = instance->GetCreature(KelthuzadGUID))
-                            kelthuzad->AI()->Talk(SAY_KELTHUZAD_CAT_DIED);
+                        case NPC_BIGGLESWORTH:
+                            // Loads Kel'Thuzad's grid. We need this as he must be active in order for his texts to work.
+                            instance->LoadGrid(3749.67f, -5114.06f);
+                            if (Creature* kelthuzad = instance->GetCreature(KelthuzadGUID))
+                                kelthuzad->AI()->Talk(SAY_KELTHUZAD_CAT_DIED);
+                            break;
+                        case NPC_ZOMBIE_CHOW:
+                            ZombieChowGUIDs.remove(creature->GetGUID());
+                            break;
                     }
+                }
             }
 
             void SetData(uint32 id, uint32 value) override
@@ -343,6 +373,10 @@ class instance_naxxramas : public InstanceMapScript
                         break;
                     case DATA_HAD_FAERLINA_GREET:
                         hadFaerlinaGreet = (value == 1u);
+                        break;
+                    case DATA_GLUTH_ZOMBIES_RESET:
+                        if (value)
+                            ZombieChowGUIDs.clear();
                         break;
                     case DATA_HAD_THADDIUS_GREET:
                         hadThaddiusGreet = (value == 1u);
@@ -393,6 +427,8 @@ class instance_naxxramas : public InstanceMapScript
                         return SirGUID;
                     case DATA_HEIGAN:
                         return HeiganGUID;
+                    case DATA_GLUTH:
+                        return GluthGUID;
                     case DATA_FEUGEN:
                         return FeugenGUID;
                     case DATA_STALAGG:
@@ -481,7 +517,6 @@ class instance_naxxramas : public InstanceMapScript
 
                 return true;
             }
-
             void Update(uint32 diff) override
             {
                 events.Update(diff);
@@ -670,6 +705,10 @@ class instance_naxxramas : public InstanceMapScript
             ObjectGuid HorsemenChestGUID;
 
             /* The Construct Quarter */
+            // Gluth
+            ObjectGuid GluthGUID;
+            GuidList ZombieChowGUIDs;
+
             // Thaddius
             ObjectGuid ThaddiusGUID;
             ObjectGuid FeugenGUID;
