@@ -2092,6 +2092,9 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint32 GetSaveTimer() const { return m_nextSave; }
         void   SetSaveTimer(uint32 timer) { m_nextSave = timer; }
 
+        uint32 GetMovementCounter() { return movementCounter; }
+        uint32 GetMovementCounterAndInc() { return movementCounter++; }
+
         void SaveRecallPosition() { m_recall_location.WorldRelocate(*this); }
         void Recall() { TeleportTo(m_recall_location); }
 
@@ -2609,6 +2612,8 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         uint32 manaBeforeDuel;
 
         WorldLocation _corpseLocation;
+
+        uint32 movementCounter; // todo: not sure how this encounter should behave when the player gets controlled by another player or the server
 };
 
 TC_GAME_API void AddItemsSetItem(Player* player, Item* item);
