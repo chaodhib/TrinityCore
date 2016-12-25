@@ -47,6 +47,7 @@ void MovementPacketSender::SendTeleportPacket(Unit* unit)
     unit->SendMessageToSet(&data, false);
 }
 
+// Spline packets are for units controlled by the server. "Force speed change" (wrongly named opcodes) and "move set speed" packets are for units controlled by a player.
 Opcodes const MovementPacketSender::moveTypeToOpcode[MAX_MOVE_TYPE][3] =
 {
     { SMSG_SPLINE_SET_WALK_SPEED,        SMSG_FORCE_WALK_SPEED_CHANGE,           MSG_MOVE_SET_WALK_SPEED },
