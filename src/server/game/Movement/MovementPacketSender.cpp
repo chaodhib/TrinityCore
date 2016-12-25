@@ -46,3 +46,47 @@ void MovementPacketSender::SendTeleportPacket(Unit* unit)
     unit->BuildMovementPacket(&data);
     unit->SendMessageToSet(&data, false);
 }
+
+Opcodes const MovementPacketSender::moveTypeToOpcode[MAX_MOVE_TYPE][3] =
+{
+    { SMSG_SPLINE_SET_WALK_SPEED,        SMSG_FORCE_WALK_SPEED_CHANGE,           MSG_MOVE_SET_WALK_SPEED },
+    { SMSG_SPLINE_SET_RUN_SPEED,         SMSG_FORCE_RUN_SPEED_CHANGE,            MSG_MOVE_SET_RUN_SPEED },
+    { SMSG_SPLINE_SET_RUN_BACK_SPEED,    SMSG_FORCE_RUN_BACK_SPEED_CHANGE,       MSG_MOVE_SET_RUN_BACK_SPEED },
+    { SMSG_SPLINE_SET_SWIM_SPEED,        SMSG_FORCE_SWIM_SPEED_CHANGE,           MSG_MOVE_SET_SWIM_SPEED },
+    { SMSG_SPLINE_SET_SWIM_BACK_SPEED,   SMSG_FORCE_SWIM_BACK_SPEED_CHANGE,      MSG_MOVE_SET_SWIM_BACK_SPEED },
+    { SMSG_SPLINE_SET_TURN_RATE,         SMSG_FORCE_TURN_RATE_CHANGE,            MSG_MOVE_SET_TURN_RATE },
+    { SMSG_SPLINE_SET_FLIGHT_SPEED,      SMSG_FORCE_FLIGHT_SPEED_CHANGE,         MSG_MOVE_SET_FLIGHT_SPEED },
+    { SMSG_SPLINE_SET_FLIGHT_BACK_SPEED, SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE,    MSG_MOVE_SET_FLIGHT_BACK_SPEED },
+    { SMSG_SPLINE_SET_PITCH_RATE,        SMSG_FORCE_PITCH_RATE_CHANGE,           MSG_MOVE_SET_PITCH_RATE },
+};
+
+void MovementPacketSender::SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter)
+{
+    WorldPacket data;
+    data.Initialize(moveTypeToOpcode[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);
+    data << movingUnit->GetPackGUID();
+    data << movementCounter;
+    if (mtype == MOVE_RUN)
+        data << uint8(1);                               // unknown byte added in 2.1.0
+    data << movingUnit->GetSpeed(mtype);
+    mover->GetSession()->SendPacket(&data);
+}
+
+void MovementPacketSender::SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter)
+{
+    WorldPacket data;
+    data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);
+    data << movingUnit->GetPackGUID();
+    movingUnit->BuildMovementPacket(&data);
+    data << movingUnit->GetSpeed(mtype);
+    mover->SendMessageToSet(&data, false);
+}
+
+void MovementPacketSender::SendSpeedChange(Unit* movingUnit, UnitMoveType mtype)
+{
+    WorldPacket data;
+    data.Initialize(moveTypeToOpcode[mtype][0], 8 + 4);
+    data << movingUnit->GetPackGUID();
+    data << movingUnit->GetSpeed(mtype);
+    movingUnit->SendMessageToSet(&data, false);
+}
