@@ -8377,8 +8377,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (charm->GetTypeId() == TYPEID_UNIT)
                 charm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
-		if (Player* thisPlayer = ToPlayer())
-            MovementPacketSender::SendHeightChange(thisPlayer, 0, true); // movement counter unimplemented
+ 		MovementPacketSender::SendHeightChange(player, 0, true); // movement counter unimplemented
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
