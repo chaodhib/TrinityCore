@@ -3,7 +3,7 @@
 
 class Player;
 
-class MovementSender
+class MovementPacketSender
 {
 
 public:

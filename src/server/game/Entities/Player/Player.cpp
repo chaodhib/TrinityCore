@@ -53,7 +53,7 @@
 #include "Language.h"
 #include "Log.h"
 #include "MapManager.h"
-#include "MovementSender.h"
+#include "MovementPacketSender.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -1931,7 +1931,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
                 z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
             Relocate(x, y, z, orientation);
-            MovementSender::SendTeleportAckPacket(this, 0); // movement counter unimplemented
+            MovementPacketSender::SendTeleportAckPacket(this, 0); // movement counter unimplemented
             SendTeleportPacket(oldPos); // this automatically relocates to oldPos in order to broadcast the packet in the right place
         }
     }

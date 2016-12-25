@@ -16,12 +16,12 @@
 * with this program. If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "MovementSender.h"
+#include "MovementPacketSender.h"
 #include "Player.h"
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
-void MovementSender::SendHeightChange(Player* player, uint32 movementCounter, bool mounted)
+void MovementPacketSender::SendHeightChange(Player* player, uint32 movementCounter, bool mounted)
 {
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, player->GetPackGUID().size() + 4 + 4);
     data << player->GetPackGUID();
@@ -30,7 +30,7 @@ void MovementSender::SendHeightChange(Player* player, uint32 movementCounter, bo
     player->GetSession()->SendPacket(&data);
 }
 
-void MovementSender::SendTeleportAckPacket(Player* player, uint32 movementCounter)
+void MovementPacketSender::SendTeleportAckPacket(Player* player, uint32 movementCounter)
 {
     WorldPacket data(MSG_MOVE_TELEPORT_ACK, 41);
     data << player->GetPackGUID();
@@ -39,7 +39,7 @@ void MovementSender::SendTeleportAckPacket(Player* player, uint32 movementCounte
     player->GetSession()->SendPacket(&data);
 }
 
-void MovementSender::SendTeleportPacket(Unit* unit)
+void MovementPacketSender::SendTeleportPacket(Unit* unit)
 {
     WorldPacket data(MSG_MOVE_TELEPORT, 38);
     data << unit->GetPackGUID();
