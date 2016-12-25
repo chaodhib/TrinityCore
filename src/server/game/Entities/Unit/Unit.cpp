@@ -41,6 +41,7 @@
 #include "ObjectMgr.h"
 #include "Opcodes.h"
 #include "OutdoorPvP.h"
+#include "MovementSender.h"
 #include "PassiveAI.h"
 #include "PetAI.h"
 #include "Pet.h"
@@ -8376,11 +8377,8 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (charm->GetTypeId() == TYPEID_UNIT)
                 charm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
-        WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, GetPackGUID().size() + 4 + 4);
-        data << GetPackGUID();
-        data << uint32(sWorld->GetGameTime());   // Packet counter
-        data << player->GetCollisionHeight(true);
-        player->GetSession()->SendPacket(&data);
+		if (Player* thisPlayer = ToPlayer())
+            MovementSender::SendHeightChange(thisPlayer, 0, true); // movement counter unimplemented
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
@@ -8395,13 +8393,7 @@ void Unit::Dismount()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
     if (Player* thisPlayer = ToPlayer())
-    {
-        WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, GetPackGUID().size() + 4 + 4);
-        data << GetPackGUID();
-        data << uint32(sWorld->GetGameTime());   // Packet counter
-        data << thisPlayer->GetCollisionHeight(false);
-        thisPlayer->GetSession()->SendPacket(&data);
-    }
+        MovementSender::SendHeightChange(thisPlayer, 0, false); // movement counter unimplemented
 
     WorldPacket data(SMSG_DISMOUNT, 8);
     data << GetPackGUID();
