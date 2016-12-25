@@ -8377,7 +8377,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (charm->GetTypeId() == TYPEID_UNIT)
                 charm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
- 		MovementPacketSender::SendHeightChange(player, 0, true); // movement counter unimplemented
+ 		MovementPacketSender::SendHeightChange(player, true);
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
@@ -8392,7 +8392,7 @@ void Unit::Dismount()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
     if (Player* thisPlayer = ToPlayer())
-        MovementPacketSender::SendHeightChange(thisPlayer, 0, false); // movement counter unimplemented
+        MovementPacketSender::SendHeightChange(thisPlayer, false);
 
     WorldPacket data(SMSG_DISMOUNT, 8);
     data << GetPackGUID();
@@ -9154,10 +9154,10 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate)
     if (Player* playerMover = GetPlayerBeingMoved()) // unit controlled by a player.
     {
         // Send notification to self. this packet is only sent to one client (the client of the player concerned by the change).
-        MovementPacketSender::SendSpeedChangeToMover(this, playerMover, mtype, 0);
+        MovementPacketSender::SendSpeedChangeToMover(this, playerMover, mtype);
 
         // Send notification to other players. sent to every clients (if in range) except one: the client of the player concerned by the change.
-        MovementPacketSender::SendSpeedChangeToObservers(this, playerMover, mtype, 0);
+        MovementPacketSender::SendSpeedChangeToObservers(this, playerMover, mtype);
     }
     else // unit controlled by AI.
     {

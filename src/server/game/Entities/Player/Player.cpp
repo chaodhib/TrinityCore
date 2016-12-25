@@ -1931,7 +1931,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
                 z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
             Relocate(x, y, z, orientation);
-            MovementPacketSender::SendTeleportAckPacket(this, 0); // movement counter unimplemented
+            MovementPacketSender::SendTeleportAckPacket(this);
             SendTeleportPacket(oldPos); // this automatically relocates to oldPos in order to broadcast the packet in the right place
         }
     }
@@ -26620,4 +26620,9 @@ uint32 Player::DoRandomRoll(uint32 minimum, uint32 maximum)
         SendDirectMessage(&data);
 
     return roll;
+}
+
+uint32 Player::GetMovementCounterAndInc() const;
+{
+    return 0; // unimplemented
 }

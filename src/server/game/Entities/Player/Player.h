@@ -2080,6 +2080,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SetClientControl(Unit* target, bool allowMove);
 
         void SetMover(Unit* target);
+        uint32 GetMovementCounterAndInc() const;
 
         void SetSeer(WorldObject* target) { m_seer = target; }
         void SetViewpoint(WorldObject* target, bool apply);

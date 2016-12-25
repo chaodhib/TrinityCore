@@ -21,20 +21,20 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
-void MovementPacketSender::SendHeightChange(Player* player, uint32 movementCounter, bool mounted)
+void MovementPacketSender::SendHeightChange(Player* player, bool mounted)
 {
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, player->GetPackGUID().size() + 4 + 4);
     data << player->GetPackGUID();
-    data << movementCounter;
+    data << player->GetMovementCounterAndInc();
     data << player->GetCollisionHeight(mounted);
     player->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendTeleportAckPacket(Player* player, uint32 movementCounter)
+void MovementPacketSender::SendTeleportAckPacket(Player* player)
 {
     WorldPacket data(MSG_MOVE_TELEPORT_ACK, 41);
     data << player->GetPackGUID();
-    data << uint32(movementCounter);
+    data << player->GetMovementCounterAndInc();
     player->BuildMovementPacket(&data);
     player->GetSession()->SendPacket(&data);
 }
@@ -61,19 +61,19 @@ Opcodes const MovementPacketSender::moveTypeToOpcode[MAX_MOVE_TYPE][3] =
     { SMSG_SPLINE_SET_PITCH_RATE,        SMSG_FORCE_PITCH_RATE_CHANGE,           MSG_MOVE_SET_PITCH_RATE },
 };
 
-void MovementPacketSender::SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter)
+void MovementPacketSender::SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype)
 {
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);
     data << movingUnit->GetPackGUID();
-    data << movementCounter;
+    data << mover->GetMovementCounterAndInc();
     if (mtype == MOVE_RUN)
         data << uint8(1);                               // unknown byte added in 2.1.0
     data << movingUnit->GetSpeed(mtype);
     mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter)
+void MovementPacketSender::SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype)
 {
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);

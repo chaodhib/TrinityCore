@@ -27,15 +27,15 @@ class MovementPacketSender
 {
 
 public:
-    static void SendHeightChange(Player* player, uint32 movementCounter, bool mounted);
-    static void SendTeleportAckPacket(Player* player, uint32 movementCounter);
+    static void SendHeightChange(Player* player, bool mounted);
+    static void SendTeleportAckPacket(Player* player);
     static void SendTeleportPacket(Unit* unit);
 
     // Only use this method if the moving unit is controlled/moved by a player
-    static void SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter);
+    static void SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype);
 
     // Only use this method if the moving unit is controlled/moved by a player
-    static void SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype, uint32 movementCounter);
+    static void SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype);
 
     // Only use this method if the moving unit is controlled/moved by the server
     static void SendSpeedChange(Unit* movingUnit, UnitMoveType mtype);
