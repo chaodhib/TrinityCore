@@ -29,3 +29,12 @@ void MovementSender::SendHeightChange(Player* player, uint32 movementCounter, bo
     data << player->GetCollisionHeight(mounted);
     player->GetSession()->SendPacket(&data);
 }
+
+void MovementSender::SendTeleportAckPacket(Player* player, uint32 movementCounter)
+{
+    WorldPacket data(MSG_MOVE_TELEPORT_ACK, 41);
+    data << player->GetPackGUID();
+    data << uint32(movementCounter);
+    player->BuildMovementPacket(&data);
+    player->GetSession()->SendPacket(&data);
+}

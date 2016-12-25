@@ -1809,8 +1809,6 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void SendMessageToSetInRange(WorldPacket* data, float dist, bool self, bool own_team_only);
         void SendMessageToSet(WorldPacket* data, Player const* skipped_rcvr) override;
 
-        void SendTeleportAckPacket();
-
         Corpse* GetCorpse() const;
         void SpawnCorpseBones(bool triggerSave = true);
         Corpse* CreateCorpse();

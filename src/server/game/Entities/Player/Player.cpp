@@ -53,6 +53,7 @@
 #include "Language.h"
 #include "Log.h"
 #include "MapManager.h"
+#include "MovementSender.h"
 #include "ObjectAccessor.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
@@ -1823,15 +1824,6 @@ uint8 Player::GetChatTag() const
     return tag;
 }
 
-void Player::SendTeleportAckPacket()
-{
-    WorldPacket data(MSG_MOVE_TELEPORT_ACK, 41);
-    data << GetPackGUID();
-    data << uint32(0);                                     // this value increments every time
-    BuildMovementPacket(&data);
-    GetSession()->SendPacket(&data);
-}
-
 bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientation, uint32 options)
 {
     if (!MapManager::IsValidMapCoord(mapid, x, y, z, orientation))
@@ -1939,7 +1931,7 @@ bool Player::TeleportTo(uint32 mapid, float x, float y, float z, float orientati
             if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
                 z += GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
             Relocate(x, y, z, orientation);
-            SendTeleportAckPacket();
+            MovementSender::SendTeleportAckPacket(this, 0); // movement counter unimplemented
             SendTeleportPacket(oldPos); // this automatically relocates to oldPos in order to broadcast the packet in the right place
         }
     }
