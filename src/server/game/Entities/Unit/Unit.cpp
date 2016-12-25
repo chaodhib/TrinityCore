@@ -13493,14 +13493,11 @@ void Unit::SendTeleportPacket(Position const& pos)
     if (GetTypeId() == TYPEID_UNIT)
         Relocate(&pos);
 
-    WorldPacket data2(MSG_MOVE_TELEPORT, 38);
-    data2 << GetPackGUID();
-    BuildMovementPacket(&data2);
+    MovementSender::SendTeleportPacket(this);
     if (GetTypeId() == TYPEID_UNIT)
         Relocate(&oldPos);
     if (GetTypeId() == TYPEID_PLAYER)
         Relocate(&pos);
-    SendMessageToSet(&data2, false);
 }
 
 bool Unit::UpdatePosition(float x, float y, float z, float orientation, bool teleport)

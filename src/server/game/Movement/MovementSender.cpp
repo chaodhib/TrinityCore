@@ -38,3 +38,11 @@ void MovementSender::SendTeleportAckPacket(Player* player, uint32 movementCounte
     player->BuildMovementPacket(&data);
     player->GetSession()->SendPacket(&data);
 }
+
+void MovementSender::SendTeleportPacket(Unit* unit)
+{
+    WorldPacket data(MSG_MOVE_TELEPORT, 38);
+    data << unit->GetPackGUID();
+    unit->BuildMovementPacket(&data);
+    unit->SendMessageToSet(&data, false);
+}
