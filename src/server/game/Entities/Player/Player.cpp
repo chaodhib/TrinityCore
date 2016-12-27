@@ -22541,12 +22541,7 @@ void Player::SendInitialPacketsAfterAddToMap()
 
     // manual send package (have code in HandleEffect(this, AURA_EFFECT_HANDLE_SEND_FOR_CLIENT, true); that must not be re-applied.
     if (HasAuraType(SPELL_AURA_MOD_ROOT))
-    {
-        WorldPacket data2(SMSG_FORCE_MOVE_ROOT, 10);
-        data2 << GetPackGUID();
-        data2 << (uint32)2;
-        SendMessageToSet(&data2, true);
-    }
+        MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
 
     SendAurasForTarget(this);
     SendEnchantmentDurations();                             // must be after add to map
@@ -23745,6 +23740,7 @@ void Player::SetClientControl(Unit* target, bool allowMove)
 
 void Player::SetMover(Unit* target)
 {
+    // todo: any way to make this method function in an atomic step?
     m_unitMovedByMe->m_playerMovingMe = nullptr;
     m_unitMovedByMe = target;
     m_unitMovedByMe->m_playerMovingMe = this;
@@ -26290,15 +26286,7 @@ bool Player::SetWaterWalking(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetWaterWalking(apply))
         return false;
 
-    WorldPacket data(apply ? SMSG_MOVE_WATER_WALK : SMSG_MOVE_LAND_WALK, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
-
-    data.Initialize(MSG_MOVE_WATER_WALK, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
+    MovementPacketSender::SendMovementFlagChange(this, apply ? MOVE_WATER_WALK : MOVE_LAND_WALK);
     return true;
 }
 

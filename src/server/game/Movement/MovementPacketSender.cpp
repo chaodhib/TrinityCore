@@ -92,20 +92,41 @@ void MovementPacketSender::SendSpeedChange(Unit* movingUnit, UnitMoveType mtype)
     movingUnit->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendMovementFlagChange(Player* player, PlayerMovementType pType)
+void MovementPacketSender::SendMovementFlagChange(Unit* unit, PlayerMovementType pType)
 {
-    WorldPacket data;
-    switch (pType)
+    if (unit->IsMovedByPlayer())
     {
-    case MOVE_ROOT:       data.Initialize(SMSG_FORCE_MOVE_ROOT, player->GetPackGUID().size() + 4); break;
-    case MOVE_UNROOT:     data.Initialize(SMSG_FORCE_MOVE_UNROOT, player->GetPackGUID().size() + 4); break;
-    case MOVE_WATER_WALK: data.Initialize(SMSG_MOVE_WATER_WALK, player->GetPackGUID().size() + 4); break;
-    case MOVE_LAND_WALK:  data.Initialize(SMSG_MOVE_LAND_WALK, player->GetPackGUID().size() + 4); break;
-    default:
-        TC_LOG_ERROR("entities.player", "Player::SetMovement: Unsupported move type (%d), data not sent to client.", pType);
-        return;
+        Player* player = unit->GetPlayerMovingMe();
+        WorldPacket data;
+        switch (pType)
+        {
+        case MOVE_ROOT:       data.Initialize(SMSG_FORCE_MOVE_ROOT, player->GetPackGUID().size() + 4); break;
+        case MOVE_UNROOT:     data.Initialize(SMSG_FORCE_MOVE_UNROOT, player->GetPackGUID().size() + 4); break;
+        case MOVE_WATER_WALK: data.Initialize(SMSG_MOVE_WATER_WALK, player->GetPackGUID().size() + 4); break;
+        case MOVE_LAND_WALK:  data.Initialize(SMSG_MOVE_LAND_WALK, player->GetPackGUID().size() + 4); break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChange: Unsupported move type (%d), data not sent to client.", pType);
+            return;
+        }
+        data << player->GetPackGUID();
+        data << player->GetMovementCounterAndInc();
+        player->GetSession()->SendPacket(&data);
     }
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    player->GetSession()->SendPacket(&data);
+    else
+    {
+        WorldPacket data;
+        switch (pType)
+        {
+        case MOVE_ROOT:       data.Initialize(SMSG_SPLINE_MOVE_ROOT, unit->GetPackGUID().size() + 4); break;
+        case MOVE_UNROOT:     data.Initialize(SMSG_SPLINE_MOVE_UNROOT, unit->GetPackGUID().size() + 4); break;
+        case MOVE_WATER_WALK: data.Initialize(SMSG_SPLINE_MOVE_WATER_WALK, unit->GetPackGUID().size() + 4); break;
+        case MOVE_LAND_WALK:  data.Initialize(SMSG_SPLINE_MOVE_LAND_WALK, unit->GetPackGUID().size() + 4); break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChange: Unsupported move type (%d), data not sent to client.", pType);
+            return;
+        }
+        data << unit->GetPackGUID();
+        unit->SendMessageToSet(&data, false);
+    }
+
 }

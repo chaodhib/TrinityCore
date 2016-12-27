@@ -40,7 +40,7 @@ public:
     // Only use this method if the moving unit is controlled/moved by the server
     static void SendSpeedChange(Unit* movingUnit, UnitMoveType mtype);
 
-    static void SendMovementFlagChange(Player* player, PlayerMovementType pType);
+    static void SendMovementFlagChange(Unit* unit, PlayerMovementType pType);
 
 private:
     static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3]; 
