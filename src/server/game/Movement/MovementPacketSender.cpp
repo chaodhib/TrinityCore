@@ -91,3 +91,21 @@ void MovementPacketSender::SendSpeedChange(Unit* movingUnit, UnitMoveType mtype)
     data << movingUnit->GetSpeed(mtype);
     movingUnit->SendMessageToSet(&data, false);
 }
+
+void MovementPacketSender::SendMovementFlagChange(Player* player, PlayerMovementType pType)
+{
+    WorldPacket data;
+    switch (pType)
+    {
+    case MOVE_ROOT:       data.Initialize(SMSG_FORCE_MOVE_ROOT, player->GetPackGUID().size() + 4); break;
+    case MOVE_UNROOT:     data.Initialize(SMSG_FORCE_MOVE_UNROOT, player->GetPackGUID().size() + 4); break;
+    case MOVE_WATER_WALK: data.Initialize(SMSG_MOVE_WATER_WALK, player->GetPackGUID().size() + 4); break;
+    case MOVE_LAND_WALK:  data.Initialize(SMSG_MOVE_LAND_WALK, player->GetPackGUID().size() + 4); break;
+    default:
+        TC_LOG_ERROR("entities.player", "Player::SetMovement: Unsupported move type (%d), data not sent to client.", pType);
+        return;
+    }
+    data << player->GetPackGUID();
+    data << player->GetMovementCounterAndInc();
+    player->GetSession()->SendPacket(&data);
+}

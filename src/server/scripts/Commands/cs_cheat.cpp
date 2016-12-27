@@ -24,6 +24,7 @@ EndScriptData */
 
 #include "Chat.h"
 #include "Language.h"
+#include "MovementPacketSender.h"
 #include "Player.h"
 #include "ScriptMgr.h"
 
@@ -181,22 +182,23 @@ public:
         if (!handler->GetSession() && !handler->GetSession()->GetPlayer())
             return false;
 
+        Player* player = handler->GetSession()->GetPlayer();
         std::string argstr = (char*)args;
 
         if (!*args)
-            argstr = (handler->GetSession()->GetPlayer()->GetCommandStatus(CHEAT_WATERWALK)) ? "off" : "on";
+            argstr = (player->GetCommandStatus(CHEAT_WATERWALK)) ? "off" : "on";
 
         if (argstr == "off")
         {
-            handler->GetSession()->GetPlayer()->SetCommandStatusOff(CHEAT_WATERWALK);
-            handler->GetSession()->GetPlayer()->SetMovement(MOVE_LAND_WALK);                // OFF
+            player->SetCommandStatusOff(CHEAT_WATERWALK);
+            MovementPacketSender::SendMovementFlagChange(player, MOVE_LAND_WALK);     // OFF
             handler->SendSysMessage("Waterwalking is OFF. You can't walk on water.");
             return true;
         }
         else if (argstr == "on")
         {
-            handler->GetSession()->GetPlayer()->SetCommandStatusOn(CHEAT_WATERWALK);
-            handler->GetSession()->GetPlayer()->SetMovement(MOVE_WATER_WALK);               // ON
+            player->SetCommandStatusOn(CHEAT_WATERWALK);
+            MovementPacketSender::SendMovementFlagChange(player, MOVE_WATER_WALK);     // ON
             handler->SendSysMessage("Waterwalking is ON. You can walk on water.");
             return true;
         }
