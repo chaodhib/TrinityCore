@@ -20,6 +20,7 @@
 #define MOVEMENT_SENDER_H
 
 #include "Unit.h"
+#include "Player.h"
 
 class Player;
 

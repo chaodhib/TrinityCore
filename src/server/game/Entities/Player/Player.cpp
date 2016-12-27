@@ -26232,7 +26232,7 @@ bool Player::SetDisableGravity(bool disable, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetDisableGravity(disable))
         return false;
 
-    MovementPacketSender::SendDisableGravityToMover(this, apply);
+    MovementPacketSender::SendDisableGravityToMover(this, disable);
     MovementPacketSender::SendDisableGravityToObservers(this);
 
     return true;
