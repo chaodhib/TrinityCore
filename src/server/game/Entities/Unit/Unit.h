@@ -2182,7 +2182,7 @@ class TC_GAME_API Unit : public WorldObject
         bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
         bool IsFalling() const;
 
-        uint32 GetMovementCounterAndInc() const;
+        uint32 GetMovementCounterAndInc();
 
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 

@@ -14226,7 +14226,7 @@ void Unit::Whisper(uint32 textId, Player* target, bool isBossWhisper /*= false*/
     target->SendDirectMessage(&data);
 }
 
-uint32 Unit::GetMovementCounterAndInc() const;
+uint32 Unit::GetMovementCounterAndInc()
 {
     return 0; // unimplemented
 }
