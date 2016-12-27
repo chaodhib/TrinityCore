@@ -2180,6 +2180,8 @@ class TC_GAME_API Unit : public WorldObject
         bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
         bool IsFalling() const;
 
+        uint32 GetMovementCounterAndInc() const;
+
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 
         virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }

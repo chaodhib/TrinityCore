@@ -26603,8 +26603,3 @@ uint32 Player::DoRandomRoll(uint32 minimum, uint32 maximum)
 
     return roll;
 }
-
-uint32 Player::GetMovementCounterAndInc() const;
-{
-    return 0; // unimplemented
-}

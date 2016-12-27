@@ -14259,3 +14259,8 @@ void Unit::Whisper(uint32 textId, Player* target, bool isBossWhisper /*= false*/
     ChatHandler::BuildChatPacket(data, isBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, bct->GetText(locale, getGender()), 0, "", locale);
     target->SendDirectMessage(&data);
 }
+
+uint32 Unit::GetMovementCounterAndInc() const;
+{
+    return 0; // unimplemented
+}
