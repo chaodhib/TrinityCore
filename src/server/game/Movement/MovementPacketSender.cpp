@@ -128,5 +128,30 @@ void MovementPacketSender::SendMovementFlagChange(Unit* unit, PlayerMovementType
         data << unit->GetPackGUID();
         unit->SendMessageToSet(&data, false);
     }
+}
 
+void MovementPacketSender::SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ)
+{
+    WorldPacket data(SMSG_MOVE_KNOCK_BACK, (8 + 4 + 4 + 4 + 4 + 4));
+    data << player->GetPackGUID();
+    data << player->GetMovementCounterAndInc();
+    data << float(vcos);                                    // x direction
+    data << float(vsin);                                    // y direction
+    data << float(speedXY);                                 // Horizontal speed
+    data << float(-speedZ);                                 // Z Movement speed (vertical)
+
+    player->GetSession()->SendPacket(&data);
+}
+
+void MovementPacketSender::SendKnockBackToObservers(Player* player)
+{
+    WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
+    data << player->GetPackGUID();
+    player->BuildMovementPacket(&data);
+    data << player->m_movementInfo.jump.sinAngle;
+    data << player->m_movementInfo.jump.cosAngle;
+    data << player->m_movementInfo.jump.xyspeed;
+    data << player->m_movementInfo.jump.zspeed;
+
+    player->SendMessageToSet(&data, false);
 }

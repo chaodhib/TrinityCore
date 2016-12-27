@@ -30,6 +30,7 @@
 #include "InstanceSaveMgr.h"
 #include "ObjectMgr.h"
 #include "Vehicle.h"
+#include "MovementPacketSender.h"
 
 #define MOVEMENT_PACKET_TIME_DELAY 0
 
@@ -536,17 +537,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
 
     _player->m_movementInfo = movementInfo;
 
-    WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
-    data << guid.WriteAsPacked();
-    _player->BuildMovementPacket(&data);
-
-    // knockback specific info
-    data << movementInfo.jump.sinAngle;
-    data << movementInfo.jump.cosAngle;
-    data << movementInfo.jump.xyspeed;
-    data << movementInfo.jump.zspeed;
-
-    _player->SendMessageToSet(&data, false);
+    MovementPacketSender::SendKnockBackToObservers(_player);
 }
 
 void WorldSession::HandleMoveHoverAck(WorldPacket& recvData)

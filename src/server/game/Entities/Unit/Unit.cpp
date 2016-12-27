@@ -12765,16 +12765,7 @@ void Unit::KnockbackFrom(float x, float y, float speedXY, float speedZ)
     {
         float vcos, vsin;
         GetSinCos(x, y, vsin, vcos);
-
-        WorldPacket data(SMSG_MOVE_KNOCK_BACK, (8 + 4 + 4 + 4 + 4 + 4));
-        data << GetPackGUID();
-        data << uint32(0);                                      // counter
-        data << float(vcos);                                    // x direction
-        data << float(vsin);                                    // y direction
-        data << float(speedXY);                                 // Horizontal speed
-        data << float(-speedZ);                                 // Z Movement speed (vertical)
-
-        player->GetSession()->SendPacket(&data);
+        MovementPacketSender::SendKnockBackToMover(player, vsin, vsin, speedXY, speedZ);
 
         if (player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) || player->HasAuraType(SPELL_AURA_FLY))
             player->SetCanFly(true, true);
@@ -13092,15 +13083,7 @@ void Unit::JumpTo(float speedXY, float speedZ, bool forward)
         float vcos = std::cos(angle+GetOrientation());
         float vsin = std::sin(angle+GetOrientation());
 
-        WorldPacket data(SMSG_MOVE_KNOCK_BACK, (8+4+4+4+4+4));
-        data << GetPackGUID();
-        data << uint32(0);                                      // Sequence
-        data << float(vcos);                                    // x direction
-        data << float(vsin);                                    // y direction
-        data << float(speedXY);                                 // Horizontal speed
-        data << float(-speedZ);                                 // Z Movement speed (vertical)
-
-        ToPlayer()->GetSession()->SendPacket(&data);
+        MovementPacketSender::SendKnockBackToMover(ToPlayer(), vcos, vsin, speedXY, speedZ);
     }
 }
 
