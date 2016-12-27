@@ -26232,15 +26232,9 @@ bool Player::SetDisableGravity(bool disable, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetDisableGravity(disable))
         return false;
 
-    WorldPacket data(disable ? SMSG_MOVE_GRAVITY_DISABLE : SMSG_MOVE_GRAVITY_ENABLE, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
+    MovementPacketSender::SendDisableGravityToMover(this, apply);
+    MovementPacketSender::SendDisableGravityToObservers(this);
 
-    data.Initialize(MSG_MOVE_GRAVITY_CHNG, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
     return true;
 }
 

@@ -203,3 +203,19 @@ void MovementPacketSender::SendFeatherFallToObservers(Player* player)
     player->BuildMovementPacket(&data);
     player->SendMessageToSet(&data, false);
 }
+
+void MovementPacketSender::SendDisableGravityToMover(Player* player, bool apply)
+{
+    WorldPacket data(apply ? SMSG_MOVE_GRAVITY_DISABLE : SMSG_MOVE_GRAVITY_ENABLE, 12);
+    data << player->GetPackGUID();
+    data << player->GetMovementCounterAndInc();
+    player->GetSession()->SendPacket(&data);
+}
+
+void MovementPacketSender::SendDisableGravityToObservers(Player* player)
+{
+    WorldPacket data(MSG_MOVE_GRAVITY_CHNG, 64);
+    data << player->GetPackGUID();
+    player->BuildMovementPacket(&data);
+    player->SendMessageToSet(&data, false);
+}

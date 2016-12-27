@@ -54,6 +54,9 @@ public:
     static void SendFeatherFallToMover(Player* player, bool apply);
     static void SendFeatherFallToObservers(Player* player);
 
+    static void SendDisableGravityToMover(Player* player, bool apply);
+    static void SendDisableGravityToObservers(Player* player);
+
 private:
     static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3]; 
 };
