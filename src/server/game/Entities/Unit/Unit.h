@@ -1728,6 +1728,8 @@ class TC_GAME_API Unit : public WorldObject
         Player* GetPlayerMovingMe() const { return m_playerMovingMe; }
         // only set for direct client control (possess effects, vehicles and similar)
         Player* m_playerMovingMe;
+        // reflects direct client control (possess effects, vehicles and similar)
+        bool IsMovedByPlayer() const { return m_playerMovingMe != NULL; }
         SharedVisionList const& GetSharedVisionList() { return m_sharedVision; }
         void AddPlayerToVision(Player* player);
         void RemovePlayerFromVision(Player* player);
