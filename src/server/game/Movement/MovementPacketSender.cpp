@@ -171,3 +171,19 @@ void MovementPacketSender::SendHoverToObservers(Player* player)
     player->BuildMovementPacket(&data);
     player->SendMessageToSet(&data, false);
 }
+
+void MovementPacketSender::SendCanFlyToMover(Player* player, bool apply)
+{
+    WorldPacket data(apply ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY, 12);
+    data << player->GetPackGUID();
+    data << player->GetMovementCounterAndInc();
+    player->GetSession()->SendPacket(&data);
+}
+
+void MovementPacketSender::SendCanFlyToObservers(Player* player)
+{
+    WorldPacket data(MSG_MOVE_UPDATE_CAN_FLY, 64);
+    data << player->GetPackGUID();
+    player->BuildMovementPacket(&data);
+    player->SendMessageToSet(&data, false);
+}

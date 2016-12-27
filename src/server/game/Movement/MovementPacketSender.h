@@ -43,12 +43,13 @@ public:
     static void SendMovementFlagChange(Unit* unit, PlayerMovementType pType);
 
     static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
-
     static void SendKnockBackToObservers(Player* player);
 
     static void SendHoverToMover(Player* player, bool apply);
-
     static void SendHoverToObservers(Player* player);
+
+    static void SendCanFlyToMover(Player* player, bool apply);
+    static void SendCanFlyToObservers(Player* player);
 
 private:
     static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3]; 

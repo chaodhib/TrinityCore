@@ -26252,15 +26252,8 @@ bool Player::SetCanFly(bool apply, bool packetOnly /*= false*/)
     if (!apply)
         SetFallInformation(0, GetPositionZ());
 
-    WorldPacket data(apply ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
-
-    data.Initialize(MSG_MOVE_UPDATE_CAN_FLY, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
+    MovementPacketSender::SendCanFlyToMover(this, apply);
+    MovementPacketSender::SendCanFlyToObservers(this);
     return true;
 }
 
