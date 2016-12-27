@@ -46,6 +46,10 @@ public:
 
     static void SendKnockBackToObservers(Player* player);
 
+    static void SendHoverToMover(Player* player, bool apply);
+
+    static void SendHoverToObservers(Player* player);
+
 private:
     static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3]; 
 };

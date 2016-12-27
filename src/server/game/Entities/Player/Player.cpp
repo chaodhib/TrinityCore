@@ -26269,15 +26269,8 @@ bool Player::SetHover(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetHover(apply))
         return false;
 
-    WorldPacket data(apply ? SMSG_MOVE_SET_HOVER : SMSG_MOVE_UNSET_HOVER, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
-
-    data.Initialize(MSG_MOVE_HOVER, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
+    MovementPacketSender::SendHoverToMover(this, apply);
+    MovementPacketSender::SendHoverToObservers(this);
     return true;
 }
 
