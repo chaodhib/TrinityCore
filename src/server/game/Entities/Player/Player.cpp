@@ -26281,15 +26281,9 @@ bool Player::SetFeatherFall(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetFeatherFall(apply))
         return false;
 
-    WorldPacket data(apply ? SMSG_MOVE_FEATHER_FALL : SMSG_MOVE_NORMAL_FALL, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
+    MovementPacketSender::SendFeatherFallToMover(this, apply);
+    MovementPacketSender::SendFeatherFallToObservers(this);
 
-    data.Initialize(MSG_MOVE_FEATHER_FALL, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
     return true;
 }
 
