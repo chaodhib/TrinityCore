@@ -11950,7 +11950,7 @@ void Unit::SetStunned(bool apply)
         if (GetTypeId() == TYPEID_PLAYER)
             SetStandState(UNIT_STAND_STATE_STAND);
 
-        MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
+        MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, true);
 
         CastStop();
     }
@@ -11966,7 +11966,7 @@ void Unit::SetStunned(bool apply)
 
         if (!HasUnitState(UNIT_STATE_ROOT))         // prevent moving if it also has root effect
         {
-            MovementPacketSender::SendMovementFlagChange(this, MOVE_UNROOT);
+            MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, false);
 
             RemoveUnitMovementFlag(MOVEMENTFLAG_ROOT);
         }
@@ -11984,13 +11984,13 @@ void Unit::SetRooted(bool apply)
         AddUnitMovementFlag(MOVEMENTFLAG_ROOT);
         StopMoving();
 
-        MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
+        MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, true);
     }
     else
     {
         if (!HasUnitState(UNIT_STATE_STUNNED))      // prevent moving if it also has stun effect
         {
-            MovementPacketSender::SendMovementFlagChange(this, MOVE_UNROOT);
+            MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, false);
             RemoveUnitMovementFlag(MOVEMENTFLAG_ROOT);
         }
     }

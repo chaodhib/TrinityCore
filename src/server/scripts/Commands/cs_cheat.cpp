@@ -191,14 +191,14 @@ public:
         if (argstr == "off")
         {
             player->SetCommandStatusOff(CHEAT_WATERWALK);
-            MovementPacketSender::SendMovementFlagChange(player, MOVE_LAND_WALK);     // OFF
+            MovementPacketSender::SendMovementFlagChange(player, MOVEMENTFLAG_WATERWALKING, false);     // OFF
             handler->SendSysMessage("Waterwalking is OFF. You can't walk on water.");
             return true;
         }
         else if (argstr == "on")
         {
             player->SetCommandStatusOn(CHEAT_WATERWALK);
-            MovementPacketSender::SendMovementFlagChange(player, MOVE_WATER_WALK);     // ON
+            MovementPacketSender::SendMovementFlagChange(player, MOVEMENTFLAG_WATERWALKING, true);     // ON
             handler->SendSysMessage("Waterwalking is ON. You can walk on water.");
             return true;
         }

@@ -4656,9 +4656,9 @@ void Player::BuildPlayerRepop()
     // convert player body to ghost
     SetHealth(1);
 
-    MovementPacketSender::SendMovementFlagChange(this, MOVE_WATER_WALK);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_WATERWALKING, true);
     if (!GetSession()->isLogingOut())
-        MovementPacketSender::SendMovementFlagChange(this, MOVE_UNROOT);
+        MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, false);
 
     // BG - remove insignia related
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_SKINNABLE);
@@ -4701,8 +4701,8 @@ void Player::ResurrectPlayer(float restore_percent, bool applySickness)
 
     setDeathState(ALIVE);
 
-    MovementPacketSender::SendMovementFlagChange(this, MOVE_LAND_WALK);
-    MovementPacketSender::SendMovementFlagChange(this, MOVE_UNROOT);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_WATERWALKING, false);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, false);
 
     m_deathTimer = 0;
 
@@ -4770,7 +4770,7 @@ void Player::KillPlayer()
     if (IsFlying() && !GetTransport())
         GetMotionMaster()->MoveFall();
 
-    MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, true);
 
     StopMirrorTimers();                                     //disable timers(bars)
 
@@ -22537,11 +22537,11 @@ void Player::SendInitialPacketsAfterAddToMap()
     }
 
     if (HasAuraType(SPELL_AURA_MOD_STUN))
-        MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
+        MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, true);
 
     // manual send package (have code in HandleEffect(this, AURA_EFFECT_HANDLE_SEND_FOR_CLIENT, true); that must not be re-applied.
     if (HasAuraType(SPELL_AURA_MOD_ROOT))
-        MovementPacketSender::SendMovementFlagChange(this, MOVE_ROOT);
+        MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_ROOT, true);
 
     SendAurasForTarget(this);
     SendEnchantmentDurations();                             // must be after add to map
@@ -26232,8 +26232,7 @@ bool Player::SetDisableGravity(bool disable, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetDisableGravity(disable))
         return false;
 
-    MovementPacketSender::SendDisableGravityToMover(this, disable);
-    MovementPacketSender::SendDisableGravityToObservers(this);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_DISABLE_GRAVITY, disable);
 
     return true;
 }
@@ -26246,8 +26245,7 @@ bool Player::SetCanFly(bool apply, bool packetOnly /*= false*/)
     if (!apply)
         SetFallInformation(0, GetPositionZ());
 
-    MovementPacketSender::SendCanFlyToMover(this, apply);
-    MovementPacketSender::SendCanFlyToObservers(this);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_CAN_FLY, apply);
     return true;
 }
 
@@ -26256,8 +26254,7 @@ bool Player::SetHover(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetHover(apply))
         return false;
 
-    MovementPacketSender::SendHoverToMover(this, apply);
-    MovementPacketSender::SendHoverToObservers(this);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_HOVER, apply);
     return true;
 }
 
@@ -26266,7 +26263,7 @@ bool Player::SetWaterWalking(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetWaterWalking(apply))
         return false;
 
-    MovementPacketSender::SendMovementFlagChange(this, apply ? MOVE_WATER_WALK : MOVE_LAND_WALK);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_WATERWALKING, apply);
     return true;
 }
 
@@ -26275,8 +26272,7 @@ bool Player::SetFeatherFall(bool apply, bool packetOnly /*= false*/)
     if (!packetOnly && !Unit::SetFeatherFall(apply))
         return false;
 
-    MovementPacketSender::SendFeatherFallToMover(this, apply);
-    MovementPacketSender::SendFeatherFallToObservers(this);
+    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_FALLING_SLOW, apply);
 
     return true;
 }

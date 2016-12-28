@@ -26,40 +26,39 @@ class Player;
 
 class MovementPacketSender
 {
+    public:
+        static void SendHeightChange(Player* player, bool mounted);
+        static void SendTeleportAckPacket(Player* player);
+        static void SendTeleportPacket(Unit* unit);
 
-public:
-    static void SendHeightChange(Player* player, bool mounted);
-    static void SendTeleportAckPacket(Player* player);
-    static void SendTeleportPacket(Unit* unit);
+        // Only use this method if the moving unit is controlled/moved by a player
+        static void SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype);
 
-    // Only use this method if the moving unit is controlled/moved by a player
-    static void SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype);
+        // Only use this method if the moving unit is controlled/moved by a player
+        static void SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype);
 
-    // Only use this method if the moving unit is controlled/moved by a player
-    static void SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype);
+        // Only use this method if the moving unit is controlled/moved by the server
+        static void SendSpeedChange(Unit* movingUnit, UnitMoveType mtype);
 
-    // Only use this method if the moving unit is controlled/moved by the server
-    static void SendSpeedChange(Unit* movingUnit, UnitMoveType mtype);
+        static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
+        static void SendKnockBackToObservers(Player* player);
 
-    static void SendMovementFlagChange(Unit* unit, PlayerMovementType pType);
+    public:
+        static void SendMovementFlagChange(Unit* unit, MovementFlags mFlag, bool apply);
+        static void SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply);
 
-    static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
-    static void SendKnockBackToObservers(Player* player);
+    private:
+        // the follow 4 methods are to be used on a unit controlled & moved by a player (as in direct client control: possess, vehicule,..)
+        static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply);
+        static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags2 mFlag, bool apply);
+        static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags mFlag);
+        static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags2 mFlag);
 
-    static void SendHoverToMover(Player* player, bool apply);
-    static void SendHoverToObservers(Player* player);
+        // to be used on a unit controlled & moved by the server
+        static void SendMovementFlagChangeServerMoved(Unit* unit, MovementFlags mFlag, bool apply);
 
-    static void SendCanFlyToMover(Player* player, bool apply);
-    static void SendCanFlyToObservers(Player* player);
-
-    static void SendFeatherFallToMover(Player* player, bool apply);
-    static void SendFeatherFallToObservers(Player* player);
-
-    static void SendDisableGravityToMover(Player* player, bool apply);
-    static void SendDisableGravityToObservers(Player* player);
-
-private:
-    static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3]; 
+    private:
+        static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3];
 };
 
 #endif

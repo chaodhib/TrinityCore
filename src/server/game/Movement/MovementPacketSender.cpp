@@ -92,44 +92,6 @@ void MovementPacketSender::SendSpeedChange(Unit* movingUnit, UnitMoveType mtype)
     movingUnit->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendMovementFlagChange(Unit* unit, PlayerMovementType pType)
-{
-    if (unit->IsMovedByPlayer())
-    {
-        Player* player = unit->GetPlayerMovingMe();
-        WorldPacket data;
-        switch (pType)
-        {
-        case MOVE_ROOT:       data.Initialize(SMSG_FORCE_MOVE_ROOT, player->GetPackGUID().size() + 4); break;
-        case MOVE_UNROOT:     data.Initialize(SMSG_FORCE_MOVE_UNROOT, player->GetPackGUID().size() + 4); break;
-        case MOVE_WATER_WALK: data.Initialize(SMSG_MOVE_WATER_WALK, player->GetPackGUID().size() + 4); break;
-        case MOVE_LAND_WALK:  data.Initialize(SMSG_MOVE_LAND_WALK, player->GetPackGUID().size() + 4); break;
-        default:
-            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChange: Unsupported move type (%d), data not sent to client.", pType);
-            return;
-        }
-        data << player->GetPackGUID();
-        data << player->GetMovementCounterAndInc();
-        player->GetSession()->SendPacket(&data);
-    }
-    else
-    {
-        WorldPacket data;
-        switch (pType)
-        {
-        case MOVE_ROOT:       data.Initialize(SMSG_SPLINE_MOVE_ROOT, unit->GetPackGUID().size() + 4); break;
-        case MOVE_UNROOT:     data.Initialize(SMSG_SPLINE_MOVE_UNROOT, unit->GetPackGUID().size() + 4); break;
-        case MOVE_WATER_WALK: data.Initialize(SMSG_SPLINE_MOVE_WATER_WALK, unit->GetPackGUID().size() + 4); break;
-        case MOVE_LAND_WALK:  data.Initialize(SMSG_SPLINE_MOVE_LAND_WALK, unit->GetPackGUID().size() + 4); break;
-        default:
-            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChange: Unsupported move type (%d), data not sent to client.", pType);
-            return;
-        }
-        data << unit->GetPackGUID();
-        unit->SendMessageToSet(&data, false);
-    }
-}
-
 void MovementPacketSender::SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ)
 {
     WorldPacket data(SMSG_MOVE_KNOCK_BACK, (8 + 4 + 4 + 4 + 4 + 4));
@@ -156,66 +118,155 @@ void MovementPacketSender::SendKnockBackToObservers(Player* player)
     player->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendHoverToMover(Player* player, bool apply)
+//    // apply
+//    {
+//        // Step1 Sent by the server to the mover's client       // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers (all of these should be renamed to SMSG! Confirmed by sniff analysis)
+//        { SMSG_FORCE_MOVE_ROOT,                                 CMSG_FORCE_MOVE_ROOT_ACK,                                   MSG_MOVE_ROOT },
+//        { SMSG_MOVE_WATER_WALK,                                 CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
+//        { SMSG_MOVE_SET_HOVER,                                  CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
+//        { SMSG_MOVE_SET_CAN_FLY,                                CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
+//        { SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
+//        { SMSG_MOVE_FEATHER_FALL,                               CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
+//        { SMSG_MOVE_GRAVITY_ENABLE,                             CMSG_MOVE_GRAVITY_ENABLE_ACK,                               MSG_MOVE_GRAVITY_CHNG } // todo: confirm these
+//    },
+//    // unapply
+//    {
+//        { SMSG_FORCE_MOVE_UNROOT,                               CMSG_FORCE_MOVE_UNROOT_ACK,                                 MSG_MOVE_UNROOT },
+//        { SMSG_MOVE_LAND_WALK,                                  CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
+//        { SMSG_MOVE_UNSET_HOVER,                                CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
+//        { SMSG_MOVE_UNSET_CAN_FLY,                              CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
+//        { SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,  CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
+//        { SMSG_MOVE_NORMAL_FALL,                                CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
+//        { SMSG_MOVE_GRAVITY_DISABLE,                            CMSG_MOVE_GRAVITY_DISABLE_ACK,                              MSG_MOVE_GRAVITY_CHNG } // todo: confirm these
+//    }
+
+
+void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply)
 {
-    WorldPacket data(apply ? SMSG_MOVE_SET_HOVER : SMSG_MOVE_UNSET_HOVER, 12);
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    player->GetSession()->SendPacket(&data);
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
+    Opcodes opcode;
+    switch (mFlag)
+    {
+        case MOVEMENTFLAG_ROOT:                 opcode = apply ? SMSG_FORCE_MOVE_ROOT :         SMSG_FORCE_MOVE_UNROOT; break;
+        case MOVEMENTFLAG_WATERWALKING:         opcode = apply ? SMSG_MOVE_WATER_WALK :         SMSG_MOVE_LAND_WALK; break;
+        case MOVEMENTFLAG_HOVER:                opcode = apply ? SMSG_MOVE_SET_HOVER :          SMSG_MOVE_UNSET_HOVER; break;
+        case MOVEMENTFLAG_CAN_FLY:              opcode = apply ? SMSG_MOVE_SET_CAN_FLY :        SMSG_MOVE_UNSET_CAN_FLY; break;
+        case MOVEMENTFLAG_FALLING_SLOW:         opcode = apply ? SMSG_MOVE_FEATHER_FALL :       SMSG_MOVE_NORMAL_FALL; break;
+        case MOVEMENTFLAG_DISABLE_GRAVITY:      opcode = apply ? SMSG_MOVE_GRAVITY_DISABLE :    SMSG_MOVE_GRAVITY_ENABLE; break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            return;
+    }
+
+    WorldPacket data(opcode, 12 + 4); // is the upper bound of unit->GetPackGUID().size() indeed equal to 12?
+    data << unit->GetPackGUID();
+    data << unit->GetMovementCounterAndInc();
+    mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendHoverToObservers(Player* player)
+void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFlags2 mFlag, bool apply)
 {
-    WorldPacket data(MSG_MOVE_HOVER, 64);
-    data << player->GetPackGUID();
-    player->BuildMovementPacket(&data);
-    player->SendMessageToSet(&data, false);
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
+    Opcodes opcode;
+    switch (mFlag)
+    {
+        case MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY: opcode = apply ? SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY : SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY; break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag2 (%d), data not sent to client.", mFlag);
+            return;
+    }
+
+    WorldPacket data(opcode, 12 + 4); // is the upper bound of unit->GetPackGUID().size() indeed equal to 12?
+    data << unit->GetPackGUID();
+    data << unit->GetMovementCounterAndInc();
+    mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendCanFlyToMover(Player* player, bool apply)
+void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, MovementFlags mFlag)
 {
-    WorldPacket data(apply ? SMSG_MOVE_SET_CAN_FLY : SMSG_MOVE_UNSET_CAN_FLY, 12);
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    player->GetSession()->SendPacket(&data);
+    Opcodes opcode;
+    switch (mFlag)
+    {
+        case MOVEMENTFLAG_ROOT:                 opcode = MSG_MOVE_ROOT; break;
+        case MOVEMENTFLAG_WATERWALKING:         opcode = MSG_MOVE_WATER_WALK; break;
+        case MOVEMENTFLAG_HOVER:                opcode = MSG_MOVE_HOVER; break;
+        case MOVEMENTFLAG_CAN_FLY:              opcode = MSG_MOVE_UPDATE_CAN_FLY; break;
+        case MOVEMENTFLAG_FALLING_SLOW:         opcode = MSG_MOVE_FEATHER_FALL; break;
+        case MOVEMENTFLAG_DISABLE_GRAVITY:      opcode = MSG_MOVE_GRAVITY_CHNG; break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            return;
+    }
+
+    WorldPacket data(opcode, 64);
+    data << unit->GetPackGUID();
+    unit->BuildMovementPacket(&data);
+    unit->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendCanFlyToObservers(Player* player)
+void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, MovementFlags2 mFlag)
 {
-    WorldPacket data(MSG_MOVE_UPDATE_CAN_FLY, 64);
-    data << player->GetPackGUID();
-    player->BuildMovementPacket(&data);
-    player->SendMessageToSet(&data, false);
+    Opcodes opcode;
+    switch (mFlag)
+    {
+        case MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY:     opcode = MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY; break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            return;
+    }
+
+    WorldPacket data(opcode, 64);
+    data << unit->GetPackGUID();
+    unit->BuildMovementPacket(&data);
+    unit->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendFeatherFallToMover(Player* player, bool apply)
+void MovementPacketSender::SendMovementFlagChangeServerMoved(Unit* unit, MovementFlags mFlag, bool apply)
 {
-    WorldPacket data(apply ? SMSG_MOVE_FEATHER_FALL : SMSG_MOVE_NORMAL_FALL, 12);
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    player->GetSession()->SendPacket(&data);
+    // CAN_FLY & CAN_TRANSITION_BETWEEN_SWIM_AND_FLY have no equivalent to the player controlled opcodes.
+    Opcodes opcode;
+    switch (mFlag)
+    {
+        case MOVEMENTFLAG_DISABLE_GRAVITY:  opcode = apply ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE   : SMSG_SPLINE_MOVE_GRAVITY_ENABLE; break;
+        case MOVEMENTFLAG_ROOT:             opcode = apply ? SMSG_SPLINE_MOVE_ROOT              : SMSG_SPLINE_MOVE_UNROOT; break;
+        case MOVEMENTFLAG_WATERWALKING:     opcode = apply ? SMSG_SPLINE_MOVE_WATER_WALK        : SMSG_SPLINE_MOVE_LAND_WALK; break;
+        case MOVEMENTFLAG_FALLING_SLOW:     opcode = apply ? SMSG_SPLINE_MOVE_FEATHER_FALL      : SMSG_SPLINE_MOVE_NORMAL_FALL; break;
+        case MOVEMENTFLAG_HOVER:            opcode = apply ? SMSG_SPLINE_MOVE_SET_HOVER         : SMSG_SPLINE_MOVE_UNSET_HOVER; break;
+        default:
+            TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            return;
+    }
+
+    WorldPacket data;
+    data.Initialize(opcode, unit->GetPackGUID().size() + 4);
+    data << unit->GetPackGUID();
+    unit->SendMessageToSet(&data, true);
 }
 
-void MovementPacketSender::SendFeatherFallToObservers(Player* player)
+ void MovementPacketSender::SendMovementFlagChange(Unit* unit, MovementFlags mFlag, bool apply)
 {
-    WorldPacket data(MSG_MOVE_FEATHER_FALL, 64);
-    data << player->GetPackGUID();
-    player->BuildMovementPacket(&data);
-    player->SendMessageToSet(&data, false);
+    if (unit->IsMovedByPlayer())
+        SendMovementFlagChangeToMover(unit, mFlag, apply);
+    else
+        SendMovementFlagChangeServerMoved(unit, mFlag, apply);
 }
 
-void MovementPacketSender::SendDisableGravityToMover(Player* player, bool apply)
-{
-    WorldPacket data(apply ? SMSG_MOVE_GRAVITY_DISABLE : SMSG_MOVE_GRAVITY_ENABLE, 12);
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    player->GetSession()->SendPacket(&data);
-}
-
-void MovementPacketSender::SendDisableGravityToObservers(Player* player)
-{
-    WorldPacket data(MSG_MOVE_GRAVITY_CHNG, 64);
-    data << player->GetPackGUID();
-    player->BuildMovementPacket(&data);
-    player->SendMessageToSet(&data, false);
-}
+ void MovementPacketSender::SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply)
+ {
+     if (unit->IsMovedByPlayer())
+         SendMovementFlagChangeToMover(unit, mFlag, apply);
+     else
+         TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChange: Unsupported MovementFlag2 (%d), data not sent to client.", mFlag);
+ }
