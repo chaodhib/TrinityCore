@@ -2074,6 +2074,7 @@ class TC_GAME_API Unit : public WorldObject
         float GetSpeedRate(UnitMoveType mtype) const { return m_speed_rate[mtype]; }
         void SetSpeed(UnitMoveType mtype, float newValue);
         void SetSpeedRate(UnitMoveType mtype, float rate);
+        void SetSpeedRateReal(UnitMoveType mtype, float rate);
 
         float ApplyEffectModifiers(SpellInfo const* spellProto, uint8 effect_index, float value) const;
         int32 CalculateSpellDamage(Unit const* target, SpellInfo const* spellProto, uint8 effect_index, int32 const* basePoints = NULL) const;

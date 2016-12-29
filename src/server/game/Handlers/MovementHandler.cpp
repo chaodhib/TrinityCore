@@ -346,17 +346,16 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.pos.GetPositionX(), movementInfo.pos.GetPositionY(), movementInfo.pos.GetPositionZ()));
     }
 
-    uint32 mstime = getMSTime();
     /*----------------------*/
     if (m_clientTimeDelay == 0)
-        m_clientTimeDelay = mstime - movementInfo.time;
+        m_clientTimeDelay = getMSTime() - movementInfo.time;
 
     /* process position-change */
     WorldPacket data(opcode, recvData.size());
     movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
 
     movementInfo.guid = mover->GetGUID();
-    WriteMovementInfo(&data, &movementInfo);
+    WriteMovementInfo(&data, &movementInfo); // this method is a duplication of Unit::BuildMovementPacket
     mover->SendMessageToSet(&data, _player);
 
     mover->m_movementInfo = movementInfo;
@@ -413,35 +412,23 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
 {
     /* extract packet */
     ObjectGuid guid;
-    uint32 unk1;
-    float  newspeed;
+    uint32 movementCounter;
+    float  speedReceived;
 
     recvData >> guid.ReadAsPacked();
 
     // now can skip not our packet
-    if (_player->GetGUID() != guid)
+    if (!_player->GetUnitBeingMoved() || _player->GetUnitBeingMoved()->GetGUID() != guid)
     {
         recvData.rfinish();                   // prevent warnings spam
         return;
     }
 
-    // continue parse packet
+    recvData >> movementCounter;
+    recvData >> speedReceived;
 
-    recvData >> unk1;                                      // counter or moveEvent
-
-    MovementInfo movementInfo;
-    movementInfo.guid = guid;
-    ReadMovementInfo(recvData, &movementInfo);
-
-    recvData >> newspeed;
-    /*----------------*/
-
-    // client ACK send one packet for mounted/run case and need skip all except last from its
-    // in other cases anti-cheat check can be fail in false case
     UnitMoveType move_type;
-
     static char const* move_type_name[MAX_MOVE_TYPE] = {  "Walk", "Run", "RunBack", "Swim", "SwimBack", "TurnRate", "Flight", "FlightBack", "PitchRate" };
-
     switch (recvData.GetOpcode())
     {
         case CMSG_FORCE_WALK_SPEED_CHANGE_ACK:          move_type = MOVE_WALK;          break;
@@ -458,30 +445,34 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
             return;
     }
 
-    // skip all forced speed changes except last and unexpected
-    // in run/mounted case used one ACK and it must be skipped.m_forced_speed_changes[MOVE_RUN} store both.
-    if (_player->m_forced_speed_changes[move_type] > 0)
+    // TODO USING MOVEMENT COUNTER AND A QUEUE
+    // verify that indeed the client is replying with the same speed that was sent to him
+    float speedSent;
+    if (std::fabs(speedSent - speedReceived) > 0.01f)
     {
-        --_player->m_forced_speed_changes[move_type];
-        if (_player->m_forced_speed_changes[move_type] > 0)
-            return;
+        TC_LOG_DEBUG("misc", "Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
+        _player->GetSession()->KickPlayer();
     }
 
-    if (!_player->GetTransport() && std::fabs(_player->GetSpeed(move_type) - newspeed) > 0.01f)
+    MovementInfo movementInfo;
+    movementInfo.guid = guid;
+    ReadMovementInfo(recvData, &movementInfo);
+
+    float newSpeedRate = speedSent / (_player->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // are you sure IsControlledByPlayer() should be used?
+    TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
+
+    if (m_clientTimeDelay == 0)
     {
-        if (_player->GetSpeed(move_type) > newspeed)         // must be greater - just correct
-        {
-            TC_LOG_ERROR("network", "%sSpeedChange player %s is NOT correct (must be %f instead %f), force set to correct value",
-                move_type_name[move_type], _player->GetName().c_str(), _player->GetSpeed(move_type), newspeed);
-            _player->SetSpeedRate(move_type, _player->GetSpeedRate(move_type));
-        }
-        else                                                // must be lesser - cheating
-        {
-            TC_LOG_DEBUG("misc", "Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
-                _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), newspeed);
-            _player->GetSession()->KickPlayer();
-        }
+        m_clientTimeDelay = getMSTime() - movementInfo.time;
+        TC_LOG_ERROR("custom", "m_clientTimeDelay for %s: %u", _player->GetName(), m_clientTimeDelay);
     }
+
+    _player->m_movementInfo = movementInfo;
+    _player->m_movementInfo.time = _player->m_movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
+    _player->UpdatePosition(movementInfo.pos);
+    _player->SetSpeedRateReal(move_type, newSpeedRate);
+    MovementPacketSender::SendSpeedChangeToObservers(_player, move_type);
 }
 
 void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recvData)

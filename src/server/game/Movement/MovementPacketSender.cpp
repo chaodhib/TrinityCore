@@ -61,35 +61,53 @@ Opcodes const MovementPacketSender::moveTypeToOpcode[MAX_MOVE_TYPE][3] =
     { SMSG_SPLINE_SET_PITCH_RATE,        SMSG_FORCE_PITCH_RATE_CHANGE,           MSG_MOVE_SET_PITCH_RATE },
 };
 
-void MovementPacketSender::SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate)
 {
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);
-    data << movingUnit->GetPackGUID();
-    data << mover->GetMovementCounterAndInc();
+    data << unit->GetPackGUID();
+    data << unit->GetMovementCounterAndInc();
     if (mtype == MOVE_RUN)
         data << uint8(1);                               // unknown byte added in 2.1.0
-    data << movingUnit->GetSpeed(mtype);
+    float newSpeedFlat = newRate * (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]); // this line is a fucking mess. what if the unit is a creature MCed by a player? this whole speed rate thing needs to die. In the meantime: use mover or unit ?
+    data << newSpeedFlat;
     mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype)
 {
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("TODO", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);
-    data << movingUnit->GetPackGUID();
-    movingUnit->BuildMovementPacket(&data);
-    data << movingUnit->GetSpeed(mtype);
+    data << unit->GetPackGUID();
+    unit->BuildMovementPacket(&data);
+    data << unit->GetSpeed(mtype);
+ 
+    /* why not simply use unit->SendMessageToSet(&data, false) you may ask? because this will fail when a player is controlling another
+    unit (creature, vehicule or player). the player's client will receive that packet, which will cause a warp back. */
     mover->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendSpeedChange(Unit* movingUnit, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeServerMoved(Unit* unit, UnitMoveType mtype)
 {
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][0], 8 + 4);
-    data << movingUnit->GetPackGUID();
-    data << movingUnit->GetSpeed(mtype);
-    movingUnit->SendMessageToSet(&data, false);
+    data << unit->GetPackGUID();
+    data << unit->GetSpeed(mtype);
+    unit->SendMessageToSet(&data, true);
 }
 
 void MovementPacketSender::SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ)
@@ -235,7 +253,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
 
 void MovementPacketSender::SendMovementFlagChangeServerMoved(Unit* unit, MovementFlags mFlag, bool apply)
 {
-    // CAN_FLY & CAN_TRANSITION_BETWEEN_SWIM_AND_FLY have no equivalent to the player controlled opcodes.
+    // MOVEMENTFLAG_CAN_FLY & MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY have no equivalent to the player controlled opcodes.
     Opcodes opcode;
     switch (mFlag)
     {

@@ -9136,34 +9136,23 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate)
     if (m_speed_rate[mtype] == rate)
         return;
 
+    if (IsMovedByPlayer())
+        MovementPacketSender::SendSpeedChangeToMover(this, mtype, rate);
+    else
+    {
+        SetSpeedRateReal(mtype, rate);
+        MovementPacketSender::SendSpeedChangeServerMoved(this, mtype);
+    }
+}
+
+void Unit::SetSpeedRateReal(UnitMoveType mtype, float rate)
+{
+    if (!IsInCombat() && ToPlayer())
+        if (Pet* pet = ToPlayer()->GetPet())
+            pet->SetSpeedRate(mtype, rate);
+
     m_speed_rate[mtype] = rate;
-
     propagateSpeedChange();
-
-    if (GetTypeId() == TYPEID_PLAYER)
-    {
-        // register forced speed changes for WorldSession::HandleForceSpeedChangeAck
-        // and do it only for real sent packets and use run for run/mounted as client expected
-        ++ToPlayer()->m_forced_speed_changes[mtype];
-
-        if (!IsInCombat())
-            if (Pet* pet = ToPlayer()->GetPet())
-                pet->SetSpeedRate(mtype, m_speed_rate[mtype]);
-    }
-
-    if (Player* playerMover = GetPlayerBeingMoved()) // unit controlled by a player.
-    {
-        // Send notification to self. this packet is only sent to one client (the client of the player concerned by the change).
-        MovementPacketSender::SendSpeedChangeToMover(this, playerMover, mtype);
-
-        // Send notification to other players. sent to every clients (if in range) except one: the client of the player concerned by the change.
-        MovementPacketSender::SendSpeedChangeToObservers(this, playerMover, mtype);
-    }
-    else // unit controlled by AI.
-    {
-        // send notification to every clients.
-        MovementPacketSender::SendSpeedChange(this, mtype);
-    }
 }
 
 bool Unit::IsGhouled() const
@@ -13336,7 +13325,15 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
 {
     *data << uint32(GetUnitMovementFlags());            // movement flags
     *data << uint16(GetExtraUnitMovementFlags());       // 2.3.0
-    *data << uint32(getMSTime());                       // time / counter
+    if (const Player* player = ToPlayer())
+    {
+        uint32 time = player->m_movementInfo.time;
+        *data << time;
+    }
+    else
+    {
+        *data << uint32(getMSTime());
+    }                  // time / counter
     *data << GetPositionX();
     *data << GetPositionY();
     *data << GetPositionZMinusOffset();

@@ -32,13 +32,10 @@ class MovementPacketSender
         static void SendTeleportPacket(Unit* unit);
 
         // Only use this method if the moving unit is controlled/moved by a player
-        static void SendSpeedChangeToMover(Unit* movingUnit, Player* mover, UnitMoveType mtype);
-
-        // Only use this method if the moving unit is controlled/moved by a player
-        static void SendSpeedChangeToObservers(Unit* movingUnit, Player* mover, UnitMoveType mtype);
-
+        static void SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate);
+        static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype);
         // Only use this method if the moving unit is controlled/moved by the server
-        static void SendSpeedChange(Unit* movingUnit, UnitMoveType mtype);
+        static void SendSpeedChangeServerMoved(Unit* unit, UnitMoveType mtype);
 
         static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
         static void SendKnockBackToObservers(Player* player);
