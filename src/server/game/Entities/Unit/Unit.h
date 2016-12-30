@@ -2176,8 +2176,6 @@ class TC_GAME_API Unit : public WorldObject
 
         uint32 GetMovementCounterAndInc();
 
-        void ValidateNewMovementInfo(MovementInfo* mi) override;
-
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 
         virtual float GetFollowAngle() const { return static_cast<float>(M_PI/2); }
