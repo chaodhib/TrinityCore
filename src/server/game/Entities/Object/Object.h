@@ -321,8 +321,8 @@ struct MovementInfo
 
     void OutDebug();
 
-    void WriteContentIntoPacket(WorldPacket* data);
-    void FillContentFromPacket(WorldPacket* data);
+    void WriteContentIntoPacket(ByteBuffer* data) const;
+    void FillContentFromPacket(ByteBuffer* data);
 };
 
 #define MAPID_INVALID 0xFFFFFFFF

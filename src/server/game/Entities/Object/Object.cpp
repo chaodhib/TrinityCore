@@ -1004,18 +1004,24 @@ void MovementInfo::OutDebug()
         TC_LOG_DEBUG("misc", "splineElevation: %f", splineElevation);
 }
 
-void MovementInfo::WriteContentIntoPacket(WorldPacket * data)
+void MovementInfo::WriteContentIntoPacket(ByteBuffer * data) const
 {
     *data << guid.WriteAsPacked();
     *data << flags;
     *data << flags2;
     *data << time;
-    *data << pos.PositionXYZOStream();
+    *data << pos.GetPositionX(); // not using PositionXYZOStream because I need the method to be const
+    *data << pos.GetPositionY();
+    *data << pos.GetPositionZ();
+    *data << pos.GetOrientation();
 
     if (HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
     {
         *data << transport.guid.WriteAsPacked();
-        *data << transport.pos.PositionXYZOStream();
+        *data << transport.pos.GetPositionX();
+        *data << transport.pos.GetPositionY();
+        *data << transport.pos.GetPositionZ();
+        *data << transport.pos.GetOrientation();
         *data << transport.time;
         *data << transport.seat;
 
@@ -1040,7 +1046,7 @@ void MovementInfo::WriteContentIntoPacket(WorldPacket * data)
         *data << splineElevation;
 }
 
-void MovementInfo::FillContentFromPacket(WorldPacket * data)
+void MovementInfo::FillContentFromPacket(ByteBuffer * data)
 {
     *data >> guid.ReadAsPacked();
     *data >> flags;
