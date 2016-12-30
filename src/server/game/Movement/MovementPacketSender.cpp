@@ -95,10 +95,7 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
     data << unit->GetPackGUID();
     unit->BuildMovementPacket(&data);
     data << unit->GetSpeed(mtype);
- 
-    /* why not simply use unit->SendMessageToSet(&data, false) you may ask? because this will fail when a player is controlling another
-    unit (creature, vehicule or player). the player's client will receive that packet, which will cause a warp back. */
-    mover->SendMessageToSet(&data, false);
+    unit->SendMessageToSet(&data, mover);
 }
 
 void MovementPacketSender::SendSpeedChangeServerMoved(Unit* unit, UnitMoveType mtype)
