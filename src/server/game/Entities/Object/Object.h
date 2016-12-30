@@ -603,6 +603,9 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
 
         uint32  LastUsedScriptID;
 
+
+        void SetFallTime(uint32 time) { m_movementInfo.SetFallTime(time); }
+
         void AddUnitMovementFlag(uint32 f) { m_movementInfo.flags |= f; }
         void RemoveUnitMovementFlag(uint32 f) { m_movementInfo.flags &= ~f; }
         bool HasUnitMovementFlag(uint32 f) const { return (m_movementInfo.flags & f) == f; }
