@@ -627,7 +627,11 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         uint32 GetTransTime()   const { return m_movementInfo.transport.time; }
         int8 GetTransSeat()     const { return m_movementInfo.transport.seat; }
         virtual ObjectGuid GetTransGUID() const;
-        void SetTransport(Transport* t) { m_transport = t; }
+        void SetTransport(Transport* t);
+        void SetTransOffset(float x, float y, float z, float o = 0.0f) { m_movementInfo.transport.pos.Relocate(x, y, z, o); }
+        void SetTransTime(uint32 time) { m_movementInfo.transport.time = time; }
+        void SetTransSeat(int8 seat) { m_movementInfo.transport.seat = seat; }
+        void SetTransGUID(ObjectGuid guid) { m_movementInfo.transport.guid = guid; }
 
         virtual float GetStationaryX() const { return GetPositionX(); }
         virtual float GetStationaryY() const { return GetPositionY(); }
@@ -635,6 +639,7 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         virtual float GetStationaryO() const { return GetOrientation(); }
 
         const MovementInfo& GetMovementInfo() const { return m_movementInfo; }
+        // should only be used by packet handlers to validate and apply incoming MovementInfos from clients. Do not use internally to modify m_movementInfo
         void UpdateMovementInfo(MovementInfo movementInfo);
         virtual void ValidateNewMovementInfo(MovementInfo* mi) {}
 

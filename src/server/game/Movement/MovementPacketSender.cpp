@@ -35,7 +35,7 @@ void MovementPacketSender::SendTeleportAckPacket(Player* player)
     WorldPacket data(MSG_MOVE_TELEPORT_ACK, 41);
     data << player->GetPackGUID();
     data << player->GetMovementCounterAndInc();
-    player->BuildMovementPacket(&data);
+    player->GetMovementInfo().WriteContentIntoPacket(&data);
     player->GetSession()->SendPacket(&data);
 }
 
@@ -43,7 +43,7 @@ void MovementPacketSender::SendTeleportPacket(Unit* unit)
 {
     WorldPacket data(MSG_MOVE_TELEPORT, 38);
     data << unit->GetPackGUID();
-    unit->BuildMovementPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data);
     unit->SendMessageToSet(&data, false);
 }
 
@@ -93,7 +93,7 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);
     data << unit->GetPackGUID();
-    unit->BuildMovementPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data);
     data << unit->GetSpeed(mtype);
     unit->SendMessageToSet(&data, mover);
 }
@@ -124,11 +124,11 @@ void MovementPacketSender::SendKnockBackToObservers(Player* player)
 {
     WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
     data << player->GetPackGUID();
-    player->BuildMovementPacket(&data);
-    data << player->m_movementInfo.jump.sinAngle;
-    data << player->m_movementInfo.jump.cosAngle;
-    data << player->m_movementInfo.jump.xyspeed;
-    data << player->m_movementInfo.jump.zspeed;
+    player->GetMovementInfo().WriteContentIntoPacket(&data);
+    data << player->GetMovementInfo().jump.sinAngle;
+    data << player->GetMovementInfo().jump.cosAngle;
+    data << player->GetMovementInfo().jump.xyspeed;
+    data << player->GetMovementInfo().jump.zspeed;
 
     player->SendMessageToSet(&data, false);
 }
@@ -227,7 +227,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
 
     WorldPacket data(opcode, 64);
     data << unit->GetPackGUID();
-    unit->BuildMovementPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data);
     unit->SendMessageToSet(&data, false);
 }
 
@@ -244,7 +244,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
 
     WorldPacket data(opcode, 64);
     data << unit->GetPackGUID();
-    unit->BuildMovementPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data);
     unit->SendMessageToSet(&data, false);
 }
 

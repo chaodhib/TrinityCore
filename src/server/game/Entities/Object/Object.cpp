@@ -331,7 +331,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
     if (flags & UPDATEFLAG_LIVING)
     {
         ASSERT(unit);
-        unit->BuildMovementPacket(data);
+        unit->GetMovementInfo().WriteContentIntoPacket(data);
 
         *data << unit->GetSpeed(MOVE_WALK)
               << unit->GetSpeed(MOVE_RUN)
@@ -344,7 +344,7 @@ void Object::BuildMovementUpdate(ByteBuffer* data, uint16 flags) const
               << unit->GetSpeed(MOVE_PITCH_RATE);
 
         // 0x08000000
-        if (unit->m_movementInfo.GetMovementFlags() & MOVEMENTFLAG_SPLINE_ENABLED)
+        if (unit->GetMovementInfo().GetMovementFlags() & MOVEMENTFLAG_SPLINE_ENABLED)
             Movement::PacketBuilder::WriteCreate(*unit->movespline, *data);
     }
     else
@@ -1851,7 +1851,7 @@ void Unit::BuildHeartBeatMsg(WorldPacket* data) const
 {
     data->Initialize(MSG_MOVE_HEARTBEAT, 32);
     *data << GetPackGUID();
-    BuildMovementPacket(data);
+    GetMovementInfo().WriteContentIntoPacket(data);
 }
 
 void WorldObject::UpdateMovementInfo(MovementInfo movementInfo)
@@ -2642,6 +2642,23 @@ ObjectGuid WorldObject::GetTransGUID() const
     if (GetTransport())
         return GetTransport()->GetGUID();
     return ObjectGuid::Empty;
+}
+
+void WorldObject::SetTransport(Transport* transport)
+{ 
+    if (transport) 
+    {
+        m_movementInfo.transport.guid = transport->GetGUID();
+        // could it be possible to initialize the rest of the transport data (seat, time, offset) here?
+        AddUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
+    }
+    else // if(!m_vehicle) ?
+    {
+        m_movementInfo.transport.Reset();
+        RemoveUnitMovementFlag(MOVEMENTFLAG_ONTRANSPORT);
+    }
+
+    m_transport = transport;
 }
 
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::list<GameObject*>&, uint32, float) const;

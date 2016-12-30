@@ -359,7 +359,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     movementInfo.WriteContentIntoPacket(&data);
     mover->SendMessageToSet(&data, _player);
 
-    mover->m_movementInfo = movementInfo;
+    mover->UpdateMovementInfo(movementInfo);
 
     // Some vehicles allow the passenger to turn by himself
     if (Vehicle* vehicle = mover->GetVehicle())
@@ -574,7 +574,7 @@ void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData)
 
     recvData.read_skip<float>();                           // unk2
 
-    _player->m_unitMovedByMe->m_movementInfo.flags = movementInfo.GetMovementFlags();
+    _player->m_unitMovedByMe->SetUnitMovementFlags(movementInfo.GetMovementFlags());
 }
 
 void WorldSession::HandleFeatherFallAck(WorldPacket& recvData)
