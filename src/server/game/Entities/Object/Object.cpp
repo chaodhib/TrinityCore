@@ -1006,7 +1006,6 @@ void MovementInfo::OutDebug()
 
 void MovementInfo::WriteContentIntoPacket(ByteBuffer * data) const
 {
-    *data << guid.WriteAsPacked();
     *data << flags;
     *data << flags2;
     *data << time;
@@ -1048,7 +1047,6 @@ void MovementInfo::WriteContentIntoPacket(ByteBuffer * data) const
 
 void MovementInfo::FillContentFromPacket(ByteBuffer * data)
 {
-    *data >> guid.ReadAsPacked();
     *data >> flags;
     *data >> flags2;
     *data >> time;
