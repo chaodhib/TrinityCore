@@ -2163,6 +2163,11 @@ class TC_GAME_API Unit : public WorldObject
         void _ExitVehicle(Position const* exitPosition = NULL);
         void _EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* aurApp = NULL);
 
+        // should only be used by packet handlers to validate and apply incoming MovementInfos from clients. Do not use internally to modify m_movementInfo
+        void UpdateMovementInfo(MovementInfo movementInfo);
+        void ValidateNewMovementInfo(MovementInfo* mi);
+        void ApplyChangesOfMovementInfo(MovementInfo movementInfo);
+
         bool isMoving() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_MOVING); }
         bool isTurning() const  { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_MASK_TURNING); }
         virtual bool CanFly() const = 0;

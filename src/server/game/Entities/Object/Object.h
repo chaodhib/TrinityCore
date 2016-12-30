@@ -639,9 +639,6 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         virtual float GetStationaryO() const { return GetOrientation(); }
 
         const MovementInfo& GetMovementInfo() const { return m_movementInfo; }
-        // should only be used by packet handlers to validate and apply incoming MovementInfos from clients. Do not use internally to modify m_movementInfo
-        void UpdateMovementInfo(MovementInfo movementInfo);
-        virtual void ValidateNewMovementInfo(MovementInfo* mi) {}
 
     protected:
         std::string m_name;
