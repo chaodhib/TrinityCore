@@ -13288,12 +13288,6 @@ void Unit::_EnterVehicle(Vehicle* vehicle, int8 seatId, AuraApplication const* a
     (void)vehicle->AddPassenger(this, seatId);
 }
 
-void Unit::UpdateMovementInfo(MovementInfo movementInfo)
-{
-    ValidateNewMovementInfo(&movementInfo);
-    m_movementInfo = movementInfo;
-}
-
 void Unit::ChangeSeat(int8 seatId, bool next)
 {
     if (!m_vehicle)

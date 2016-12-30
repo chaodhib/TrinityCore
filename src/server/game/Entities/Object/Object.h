@@ -634,6 +634,10 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         virtual float GetStationaryZ() const { return GetPositionZ(); }
         virtual float GetStationaryO() const { return GetOrientation(); }
 
+        const MovementInfo& GetMovementInfo() const { return m_movementInfo; }
+        void UpdateMovementInfo(MovementInfo movementInfo);
+        virtual void ValidateNewMovementInfo(MovementInfo* mi) {}
+
     protected:
         std::string m_name;
         bool m_isActive;

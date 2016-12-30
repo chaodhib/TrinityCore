@@ -1854,6 +1854,12 @@ void Unit::BuildHeartBeatMsg(WorldPacket* data) const
     BuildMovementPacket(data);
 }
 
+void WorldObject::UpdateMovementInfo(MovementInfo movementInfo)
+{
+    ValidateNewMovementInfo(&movementInfo);
+    m_movementInfo = movementInfo;
+}
+
 void WorldObject::SendMessageToSet(WorldPacket* data, bool self)
 {
     if (IsInWorld())
