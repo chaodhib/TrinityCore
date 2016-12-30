@@ -974,7 +974,7 @@ bool Object::PrintIndexError(uint32 index, bool set) const
     return false;
 }
 
-void MovementInfo::OutDebug()
+void MovementInfo::OutDebug() const
 {
     TC_LOG_DEBUG("misc", "MOVEMENT INFO");
     TC_LOG_DEBUG("misc", "%s", guid.ToString().c_str());

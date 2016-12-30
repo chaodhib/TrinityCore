@@ -319,7 +319,7 @@ struct MovementInfo
 
     void SetFallTime(uint32 time) { fallTime = time; }
 
-    void OutDebug();
+    void OutDebug() const;
 
     void WriteContentIntoPacket(ByteBuffer* data) const;
     void FillContentFromPacket(ByteBuffer* data);
