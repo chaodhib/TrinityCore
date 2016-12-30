@@ -209,7 +209,7 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recvData)
     recvData.readPackGUID(guid);
 
     MovementInfo movementInfo;                              // used only for proper packet read
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     recvData.read_skip<uint32>();                          // spline id
 

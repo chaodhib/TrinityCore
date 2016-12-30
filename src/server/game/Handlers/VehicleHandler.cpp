@@ -40,7 +40,7 @@ void WorldSession::HandleDismissControlledVehicle(WorldPacket &recvData)
 
     MovementInfo mi;
     mi.guid = guid;
-    ReadMovementInfo(recvData, &mi);
+    mi.FillContentFromPacket(&recvData);
 
     _player->m_movementInfo = mi;
 
@@ -81,7 +81,7 @@ void WorldSession::HandleChangeSeatsOnControlledVehicle(WorldPacket &recvData)
             recvData >> guid.ReadAsPacked();
 
             MovementInfo movementInfo;
-            ReadMovementInfo(recvData, &movementInfo);
+            movementInfo.FillContentFromPacket(&recvData);
             vehicle_base->m_movementInfo = movementInfo;
 
             ObjectGuid accessory;        //  accessory guid

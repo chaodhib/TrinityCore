@@ -274,7 +274,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 
     MovementInfo movementInfo;
     movementInfo.guid = guid;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     recvData.rfinish();                         // prevent warnings spam
 
@@ -356,7 +356,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
 
     movementInfo.guid = mover->GetGUID();
-    WriteMovementInfo(&data, &movementInfo); // this method is a duplication of Unit::BuildMovementPacket
+    movementInfo.WriteContentIntoPacket(&data);
     mover->SendMessageToSet(&data, _player);
 
     mover->m_movementInfo = movementInfo;
@@ -458,7 +458,7 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
 
     MovementInfo movementInfo;
     movementInfo.guid = guid;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     float newSpeedRate = speedSent / (_player->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
     TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
@@ -493,7 +493,7 @@ void WorldSession::HandleMoveNotActiveMover(WorldPacket &recvData)
     recvData >> old_mover_guid.ReadAsPacked();
 
     MovementInfo mi;
-    ReadMovementInfo(recvData, &mi);
+    mi.FillContentFromPacket(&recvData);
 
     mi.guid = old_mover_guid;
 
@@ -521,7 +521,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
     recvData.read_skip<uint32>();                          // unk
 
     MovementInfo movementInfo;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     _player->m_movementInfo = movementInfo;
 
@@ -538,7 +538,7 @@ void WorldSession::HandleMoveHoverAck(WorldPacket& recvData)
     recvData.read_skip<uint32>();                           // unk
 
     MovementInfo movementInfo;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     recvData.read_skip<uint32>();                           // unk2
 }
@@ -553,7 +553,7 @@ void WorldSession::HandleMoveWaterWalkAck(WorldPacket& recvData)
     recvData.read_skip<uint32>();                           // unk
 
     MovementInfo movementInfo;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     recvData.read_skip<uint32>();                           // unk2
 }
@@ -570,7 +570,7 @@ void WorldSession::HandleMoveSetCanFlyAckOpcode(WorldPacket& recvData)
 
     MovementInfo movementInfo;
     movementInfo.guid = guid;
-    ReadMovementInfo(recvData, &movementInfo);
+    movementInfo.FillContentFromPacket(&recvData);
 
     recvData.read_skip<float>();                           // unk2
 
@@ -606,7 +606,7 @@ void WorldSession::HandleMoveUnRootAck(WorldPacket& recvData)
 
                                               MovementInfo movementInfo;
                                               movementInfo.guid = guid;
-                                              ReadMovementInfo(recvData, &movementInfo);
+                                              movementInfo.FillContentFromPacket(&recvData);
                                               recvData.read_skip<float>();                           // unk2
                                               */
 }
@@ -631,7 +631,7 @@ void WorldSession::HandleMoveRootAck(WorldPacket& recvData)
                                               recvData.read_skip<uint32>();                          // unk
 
                                               MovementInfo movementInfo;
-                                              ReadMovementInfo(recvData, &movementInfo);
+                                              movementInfo.FillContentFromPacket(&recvData);
                                               */
 }
 
