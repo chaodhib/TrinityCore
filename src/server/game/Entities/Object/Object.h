@@ -320,6 +320,9 @@ struct MovementInfo
     void SetFallTime(uint32 time) { fallTime = time; }
 
     void OutDebug();
+
+    void WriteContentIntoPacket(WorldPacket* data);
+    void FillContentFromPacket(WorldPacket* data);
 };
 
 #define MAPID_INVALID 0xFFFFFFFF

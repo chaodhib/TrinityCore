@@ -1004,6 +1004,78 @@ void MovementInfo::OutDebug()
         TC_LOG_DEBUG("misc", "splineElevation: %f", splineElevation);
 }
 
+void MovementInfo::WriteContentIntoPacket(WorldPacket * data)
+{
+    *data << guid.WriteAsPacked();
+    *data << flags;
+    *data << flags2;
+    *data << time;
+    *data << pos.PositionXYZOStream();
+
+    if (HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
+    {
+        *data << transport.guid.WriteAsPacked();
+        *data << transport.pos.PositionXYZOStream();
+        *data << transport.time;
+        *data << transport.seat;
+
+        if (HasExtraMovementFlag(MOVEMENTFLAG2_INTERPOLATED_MOVEMENT))
+            *data << transport.time2;
+    }
+
+    if (HasMovementFlag(MovementFlags(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING)) || HasExtraMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING))
+        *data << pitch;
+
+    *data << fallTime;
+
+    if (HasMovementFlag(MOVEMENTFLAG_FALLING))
+    {
+        *data << jump.zspeed;
+        *data << jump.sinAngle;
+        *data << jump.cosAngle;
+        *data << jump.xyspeed;
+    }
+
+    if (HasMovementFlag(MOVEMENTFLAG_SPLINE_ELEVATION))
+        *data << splineElevation;
+}
+
+void MovementInfo::FillContentFromPacket(WorldPacket * data)
+{
+    *data >> guid.ReadAsPacked();
+    *data >> flags;
+    *data >> flags2;
+    *data >> time;
+    *data >> pos.PositionXYZOStream();
+
+    if (HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
+    {
+        *data >> transport.guid.ReadAsPacked();
+        *data >> transport.pos.PositionXYZOStream();
+        *data >> transport.time;
+        *data >> transport.seat;
+
+        if (HasExtraMovementFlag(MOVEMENTFLAG2_INTERPOLATED_MOVEMENT))
+            *data >> transport.time2;
+    }
+
+    if (HasMovementFlag(MovementFlags(MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING)) || (HasExtraMovementFlag(MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING)))
+        *data >> pitch;
+
+    *data >> fallTime;
+
+    if (HasMovementFlag(MOVEMENTFLAG_FALLING))
+    {
+        *data >> jump.zspeed;
+        *data >> jump.sinAngle;
+        *data >> jump.cosAngle;
+        *data >> jump.xyspeed;
+    }
+
+    if (HasMovementFlag(MOVEMENTFLAG_SPLINE_ELEVATION))
+        *data >> splineElevation;
+}
+
 WorldObject::WorldObject(bool isWorldObject) : WorldLocation(), LastUsedScriptID(0),
 m_name(""), m_isActive(false), m_isWorldObject(isWorldObject), m_zoneScript(NULL),
 m_transport(NULL), m_currMap(NULL), m_InstanceId(0),
