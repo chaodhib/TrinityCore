@@ -614,8 +614,6 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         virtual ObjectGuid GetTransGUID() const;
         void SetTransport(Transport* t) { m_transport = t; }
 
-        MovementInfo m_movementInfo;
-
         virtual float GetStationaryX() const { return GetPositionX(); }
         virtual float GetStationaryY() const { return GetPositionY(); }
         virtual float GetStationaryZ() const { return GetPositionZ(); }
@@ -626,6 +624,8 @@ class TC_GAME_API WorldObject : public Object, public WorldLocation
         bool m_isActive;
         const bool m_isWorldObject;
         ZoneScript* m_zoneScript;
+
+        MovementInfo m_movementInfo;
 
         // transports
         Transport* m_transport;
