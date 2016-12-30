@@ -268,25 +268,16 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     }
 
     /* extract packet */
-    ObjectGuid guid;
-
-    recvData >> guid.ReadAsPacked();
-
     MovementInfo movementInfo;
-    movementInfo.guid = guid;
     movementInfo.FillContentFromPacket(&recvData);
-
     recvData.rfinish();                         // prevent warnings spam
 
     // prevent tampered movement data
-    if (guid != mover->GetGUID())
+    if (movementInfo.guid != mover->GetGUID())
         return;
 
     if (!movementInfo.pos.IsPositionValid())
-    {
-        recvData.rfinish();                     // prevent warnings spam
         return;
-    }
 
     /* handle special cases */
     if (movementInfo.HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
@@ -294,17 +285,11 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         // transports size limited
         // (also received at zeppelin leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
         if (movementInfo.transport.pos.GetPositionX() > 50 || movementInfo.transport.pos.GetPositionY() > 50 || movementInfo.transport.pos.GetPositionZ() > 50)
-        {
-            recvData.rfinish();                 // prevent warnings spam
             return;
-        }
 
         if (!Trinity::IsValidMapCoord(movementInfo.pos.GetPositionX() + movementInfo.transport.pos.GetPositionX(), movementInfo.pos.GetPositionY() + movementInfo.transport.pos.GetPositionY(),
             movementInfo.pos.GetPositionZ() + movementInfo.transport.pos.GetPositionZ(), movementInfo.pos.GetOrientation() + movementInfo.transport.pos.GetOrientation()))
-        {
-            recvData.rfinish();                 // prevent warnings spam
             return;
-        }
 
         // if we boarded a transport, add us to it
         if (plrMover)
