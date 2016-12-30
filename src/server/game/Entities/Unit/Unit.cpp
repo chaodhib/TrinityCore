@@ -13325,15 +13325,13 @@ void Unit::BuildMovementPacket(ByteBuffer *data) const
 {
     *data << uint32(GetUnitMovementFlags());            // movement flags
     *data << uint16(GetExtraUnitMovementFlags());       // 2.3.0
-    if (const Player* player = ToPlayer())
-    {
-        uint32 time = player->m_movementInfo.time;
-        *data << time;
-    }
+
+    // time
+    if (IsMovedByPlayer())
+        *data << m_movementInfo.time;
     else
-    {
         *data << uint32(getMSTime());
-    }                  // time / counter
+
     *data << GetPositionX();
     *data << GetPositionY();
     *data << GetPositionZMinusOffset();

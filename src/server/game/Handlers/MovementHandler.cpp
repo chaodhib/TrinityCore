@@ -460,14 +460,11 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     movementInfo.guid = guid;
     ReadMovementInfo(recvData, &movementInfo);
 
-    float newSpeedRate = speedSent / (_player->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // are you sure IsControlledByPlayer() should be used?
+    float newSpeedRate = speedSent / (_player->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
     TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
 
     if (m_clientTimeDelay == 0)
-    {
         m_clientTimeDelay = getMSTime() - movementInfo.time;
-        TC_LOG_ERROR("custom", "m_clientTimeDelay for %s: %u", _player->GetName(), m_clientTimeDelay);
-    }
 
     _player->m_movementInfo = movementInfo;
     _player->m_movementInfo.time = _player->m_movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
