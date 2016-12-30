@@ -250,6 +250,38 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recvData)
     GetPlayer()->ProcessDelayedOperations();
 }
 
+/*
+Handles:
+MSG_MOVE_START_FORWARD
+MSG_MOVE_START_BACKWARD
+MSG_MOVE_STOP
+MSG_MOVE_START_STRAFE_LEFT
+MSG_MOVE_START_STRAFE_RIGHT
+MSG_MOVE_STOP_STRAFE
+MSG_MOVE_JUMP
+MSG_MOVE_START_TURN_LEFT
+MSG_MOVE_START_TURN_RIGHT
+MSG_MOVE_STOP_TURN
+
+MSG_MOVE_START_PITCH_UP
+MSG_MOVE_START_PITCH_DOWN
+MSG_MOVE_STOP_PITCH
+MSG_MOVE_SET_RUN_MODE
+MSG_MOVE_SET_WALK_MODE
+MSG_MOVE_FALL_LAND
+MSG_MOVE_START_SWIM
+MSG_MOVE_STOP_SWIM
+MSG_MOVE_SET_FACING
+MSG_MOVE_SET_PITCH
+
+MSG_MOVE_HEARTBEAT
+CMSG_MOVE_FALL_RESET (?)
+CMSG_MOVE_SET_FLY (?)
+MSG_MOVE_START_ASCEND
+MSG_MOVE_STOP_ASCEND
+CMSG_MOVE_CHNG_TRANSPORT (?)
+MSG_MOVE_START_DESCEND
+*/
 void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 {
     uint16 opcode = recvData.GetOpcode();
@@ -269,6 +301,10 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 
     /* extract packet */
     MovementInfo movementInfo;
+    ObjectGuid guid;
+
+    recvData >> guid.ReadAsPacked();
+    movementInfo.guid = guid;
     movementInfo.FillContentFromPacket(&recvData);
     recvData.rfinish();                         // prevent warnings spam
 
@@ -337,14 +373,12 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         m_clientTimeDelay = getMSTime() - movementInfo.time;
 
     /* process position-change */
+    mover->UpdateMovementInfo(movementInfo);
     WorldPacket data(opcode, recvData.size());
     movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
-
-    movementInfo.guid = mover->GetGUID();
+    data << movementInfo.guid.WriteAsPacked();
     movementInfo.WriteContentIntoPacket(&data);
     mover->SendMessageToSet(&data, _player);
-
-    mover->UpdateMovementInfo(movementInfo);
 
     // Some vehicles allow the passenger to turn by himself
     if (Vehicle* vehicle = mover->GetVehicle())
@@ -396,22 +430,19 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 
 void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
 {
+    Unit* mover = _player->GetUnitBeingMoved();
+    ASSERT(mover);
+
     /* extract packet */
     ObjectGuid guid;
-    uint32 movementCounter;
-    float  speedReceived;
-
     recvData >> guid.ReadAsPacked();
 
     // now can skip not our packet
-    if (!_player->GetUnitBeingMoved() || _player->GetUnitBeingMoved()->GetGUID() != guid)
+    if (mover->GetGUID() != guid)
     {
         recvData.rfinish();                   // prevent warnings spam
         return;
     }
-
-    recvData >> movementCounter;
-    recvData >> speedReceived;
 
     UnitMoveType move_type;
     static char const* move_type_name[MAX_MOVE_TYPE] = {  "Walk", "Run", "RunBack", "Swim", "SwimBack", "TurnRate", "Flight", "FlightBack", "PitchRate" };
@@ -431,31 +462,41 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
             return;
     }
 
-    // TODO USING MOVEMENT COUNTER AND A QUEUE
-    // verify that indeed the client is replying with the same speed that was sent to him
-    float speedSent;
-    if (std::fabs(speedSent - speedReceived) > 0.01f)
-    {
-        TC_LOG_DEBUG("misc", "Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
-            _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
-        _player->GetSession()->KickPlayer();
-    }
-
+    uint32 movementCounter;
+    float  speedReceived;
     MovementInfo movementInfo;
     movementInfo.guid = guid;
-    movementInfo.FillContentFromPacket(&recvData);
 
-    float newSpeedRate = speedSent / (_player->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
+    recvData >> movementCounter;
+    movementInfo.FillContentFromPacket(&recvData);
+    recvData >> speedReceived;
+
+    //// TODO USING MOVEMENT COUNTER AND A QUEUE
+    //// verify that indeed the client is replying with the same speed that was sent to him
+    //float speedSent;
+    //if (std::fabs(speedSent - speedReceived) > 0.01f)
+    //{
+    //    TC_LOG_DEBUG("misc", "Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
+    //        _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
+    //    _player->GetSession()->KickPlayer();
+    //}
+
+    // @TODO FOR DEBUG ONLY. CHANGE THIS:
+    float speedSent = speedReceived;
+
+    float newSpeedRate = speedSent / (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
     TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
 
     if (m_clientTimeDelay == 0)
         m_clientTimeDelay = getMSTime() - movementInfo.time;
 
-    _player->m_movementInfo = movementInfo;
-    _player->m_movementInfo.time = _player->m_movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
-    _player->UpdatePosition(movementInfo.pos);
-    _player->SetSpeedRateReal(move_type, newSpeedRate);
-    MovementPacketSender::SendSpeedChangeToObservers(_player, move_type);
+    movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
+
+    mover->UpdateMovementInfo(movementInfo);
+
+    mover->UpdatePosition(movementInfo.pos);
+    mover->SetSpeedRateReal(move_type, newSpeedRate);
+    MovementPacketSender::SendSpeedChangeToObservers(mover, move_type);
 }
 
 void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recvData)
