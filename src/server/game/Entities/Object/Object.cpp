@@ -2653,6 +2653,56 @@ void WorldObject::SetTransport(Transport* transport)
     m_transport = transport;
 }
 
+MovementInfo WorldObject::GetMovementInfo() const
+{
+    MovementInfo mInfo;
+    mInfo.guid = GetGUID();
+    mInfo.SetMovementFlags(GetUnitMovementFlags());
+    mInfo.SetExtraMovementFlags(GetExtraUnitMovementFlags());
+    mInfo.time = uint32(getMSTime()); // @todo: one (or more) field should be created for this! lastPositionUpdateByPlayer & lastPositionUpdateByServer or just lastPositionUpdate + lastPositionUpdateByPlayer on the side.
+    mInfo.pos.Relocate(GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
+
+    // 0x00000200
+    if (GetUnitMovementFlags() & MOVEMENTFLAG_ONTRANSPORT)
+    {
+        ObjectGuid GUID;
+        if (GetTransport())
+            GUID = GetTransport()->GetGUID();
+        else
+            GUID.Clear(); // "translated" from "*data << (uint8)0;". @todo unsure about this one
+
+        mInfo.transport.guid = GUID;
+        mInfo.transport.pos.Relocate(GetTransOffsetX(), GetTransOffsetY(), GetTransOffsetZ(), GetTransOffsetO());
+        mInfo.transport.time = GetTransTime();
+        mInfo.transport.seat = GetTransSeat();
+
+        if (GetExtraUnitMovementFlags() & MOVEMENTFLAG2_INTERPOLATED_MOVEMENT)
+            mInfo.transport.time2 = m_movementInfo.transport.time2;
+    }
+
+    // 0x02200000
+    if ((GetUnitMovementFlags() & (MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING))
+        || (m_movementInfo.flags2 & MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING))
+        mInfo.pitch = m_movementInfo.pitch;
+
+    mInfo.SetFallTime(m_movementInfo.fallTime);
+
+    // 0x00001000
+    if (GetUnitMovementFlags() & MOVEMENTFLAG_FALLING)
+    {
+        mInfo.jump.zspeed = m_movementInfo.jump.zspeed;
+        mInfo.jump.sinAngle = m_movementInfo.jump.sinAngle;
+        mInfo.jump.cosAngle = m_movementInfo.jump.cosAngle;
+        mInfo.jump.xyspeed = m_movementInfo.jump.xyspeed;
+    }
+
+    // 0x04000000
+    if (GetUnitMovementFlags() & MOVEMENTFLAG_SPLINE_ELEVATION)
+        mInfo.splineElevation = m_movementInfo.splineElevation;
+
+    return mInfo;
+}
+
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::list<GameObject*>&, uint32, float) const;
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::deque<GameObject*>&, uint32, float) const;
 template TC_GAME_API void WorldObject::GetGameObjectListWithEntryInGrid(std::vector<GameObject*>&, uint32, float) const;
