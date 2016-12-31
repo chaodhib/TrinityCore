@@ -2175,7 +2175,6 @@ class TC_GAME_API Unit : public WorldObject
         bool IsFalling() const;
 
         uint32 GetMovementCounterAndInc();
-        MovementInfo GetMovementInfo() const override;
 
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 

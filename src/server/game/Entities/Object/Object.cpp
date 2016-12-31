@@ -2663,18 +2663,18 @@ MovementInfo WorldObject::GetMovementInfo() const
     mInfo.SetMovementFlags(GetUnitMovementFlags());
     mInfo.SetExtraMovementFlags(GetExtraUnitMovementFlags());
     mInfo.time = uint32(getMSTime()); // @todo: one (or more) field should be created for this! lastPositionUpdateByPlayer & lastPositionUpdateByServer or just lastPositionUpdate + lastPositionUpdateByPlayer on the side.
-    mInfo.pos.Relocate(GetPositionX(), GetPositionY(), GetPositionZ(), GetOrientation());
+    mInfo.pos.Relocate
+        (
+        GetPositionX(), 
+        GetPositionY(), 
+        ToUnit() != NULL ? ToUnit()->GetPositionZMinusOffset() : GetPositionZ(),
+        GetOrientation()
+        );
 
     // 0x00000200
     if (GetUnitMovementFlags() & MOVEMENTFLAG_ONTRANSPORT)
     {
-        ObjectGuid GUID;
-        if (GetTransport())
-            GUID = GetTransport()->GetGUID();
-        else
-            GUID.Clear(); // "translated" from "*data << (uint8)0;". @todo unsure about this one
-
-        mInfo.transport.guid = GUID;
+        mInfo.transport.guid = GetTransGUID();
         mInfo.transport.pos.Relocate(GetTransOffsetX(), GetTransOffsetY(), GetTransOffsetZ(), GetTransOffsetO());
         mInfo.transport.time = GetTransTime();
         mInfo.transport.seat = GetTransSeat();

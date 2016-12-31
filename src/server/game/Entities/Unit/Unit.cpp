@@ -14151,26 +14151,6 @@ uint32 Unit::GetMovementCounterAndInc()
     return 0; // unimplemented
 }
 
-MovementInfo Unit::GetMovementInfo() const
-{
-    MovementInfo mInfo = WorldObject::GetMovementInfo();
-
-    mInfo.pos.m_positionZ = GetPositionZMinusOffset();
-
-    if (GetUnitMovementFlags() & MOVEMENTFLAG_ONTRANSPORT)
-    {
-        ObjectGuid GUID;
-        if (m_vehicle)
-            GUID = m_vehicle->GetBase()->GetGUID();
-        else if (GetTransport())
-            GUID = GetTransport()->GetGUID();
-        else
-            GUID.Clear(); // "translated" from "*data << (uint8)0;". @todo unsure about this one
-    }
-
-    return mInfo;
-}
-
 void Unit::ValidateNewMovementInfo(MovementInfo* mi)
 {
     //! Anti-cheat checks.
