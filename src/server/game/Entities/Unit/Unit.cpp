@@ -14239,7 +14239,7 @@ void Unit::ValidateNewMovementInfo(MovementInfo* mi)
 
 void Unit::ApplyChangesOfMovementInfo(MovementInfo movementInfo)
 {
-
+     
 }
 
 void Unit::UpdateMovementInfo(MovementInfo movementInfo)
