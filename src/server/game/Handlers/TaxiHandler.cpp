@@ -205,11 +205,8 @@ void WorldSession::HandleMoveSplineDoneOpcode(WorldPacket& recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Received CMSG_MOVE_SPLINE_DONE");
 
-    uint64 guid; // used only for proper packet read
-    recvData.readPackGUID(guid);
-
     MovementInfo movementInfo;                              // used only for proper packet read
-    movementInfo.FillContentFromPacket(&recvData);
+    movementInfo.FillContentFromPacket(&recvData, true);
 
     recvData.read_skip<uint32>();                          // spline id
 

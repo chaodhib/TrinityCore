@@ -42,8 +42,7 @@ void MovementPacketSender::SendTeleportAckPacket(Player* player)
 void MovementPacketSender::SendTeleportPacket(Unit* unit)
 {
     WorldPacket data(MSG_MOVE_TELEPORT, 38);
-    data << unit->GetPackGUID();
-    unit->GetMovementInfo().WriteContentIntoPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
     unit->SendMessageToSet(&data, false);
 }
 
@@ -92,8 +91,7 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
 
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);
-    data << unit->GetPackGUID();
-    unit->GetMovementInfo().WriteContentIntoPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
     data << unit->GetSpeed(mtype);
     unit->SendMessageToSet(&data, mover);
 }
@@ -123,8 +121,7 @@ void MovementPacketSender::SendKnockBackToMover(Player* player, float vcos, floa
 void MovementPacketSender::SendKnockBackToObservers(Player* player)
 {
     WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
-    data << player->GetPackGUID();
-    player->GetMovementInfo().WriteContentIntoPacket(&data);
+    player->GetMovementInfo().WriteContentIntoPacket(&data, true);
     data << player->GetMovementInfo().jump.sinAngle;
     data << player->GetMovementInfo().jump.cosAngle;
     data << player->GetMovementInfo().jump.xyspeed;
@@ -226,8 +223,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
     }
 
     WorldPacket data(opcode, 64);
-    data << unit->GetPackGUID();
-    unit->GetMovementInfo().WriteContentIntoPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
     unit->SendMessageToSet(&data, false);
 }
 
@@ -243,8 +239,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
     }
 
     WorldPacket data(opcode, 64);
-    data << unit->GetPackGUID();
-    unit->GetMovementInfo().WriteContentIntoPacket(&data);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
     unit->SendMessageToSet(&data, false);
 }
 

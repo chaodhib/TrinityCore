@@ -1004,8 +1004,10 @@ void MovementInfo::OutDebug() const
         TC_LOG_DEBUG("misc", "splineElevation: %f", splineElevation);
 }
 
-void MovementInfo::WriteContentIntoPacket(ByteBuffer * data) const
+void MovementInfo::WriteContentIntoPacket(ByteBuffer * data, bool includeGuid /* = false*/) const
 {
+    if (includeGuid)
+        *data << guid.WriteAsPacked();
     *data << flags;
     *data << flags2;
     *data << time;
@@ -1045,8 +1047,10 @@ void MovementInfo::WriteContentIntoPacket(ByteBuffer * data) const
         *data << splineElevation;
 }
 
-void MovementInfo::FillContentFromPacket(ByteBuffer * data)
+void MovementInfo::FillContentFromPacket(ByteBuffer * data, bool includeGuid /* = false*/)
 {
+    if(includeGuid)
+        *data >> guid.ReadAsPacked();
     *data >> flags;
     *data >> flags2;
     *data >> time;
@@ -1848,8 +1852,7 @@ void Object::ForceValuesUpdateAtIndex(uint32 i)
 void Unit::BuildHeartBeatMsg(WorldPacket* data) const
 {
     data->Initialize(MSG_MOVE_HEARTBEAT, 32);
-    *data << GetPackGUID();
-    GetMovementInfo().WriteContentIntoPacket(data);
+    GetMovementInfo().WriteContentIntoPacket(data, true);
 }
 
 void WorldObject::SendMessageToSet(WorldPacket* data, bool self)

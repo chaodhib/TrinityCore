@@ -323,8 +323,8 @@ struct MovementInfo
 
     void OutDebug() const;
 
-    void WriteContentIntoPacket(ByteBuffer* data) const;
-    void FillContentFromPacket(ByteBuffer* data);
+    void WriteContentIntoPacket(ByteBuffer* data, bool includeGuid = false) const;
+    void FillContentFromPacket(ByteBuffer* data, bool includeGuid = false);
 };
 
 #define MAPID_INVALID 0xFFFFFFFF

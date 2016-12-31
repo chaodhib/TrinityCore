@@ -301,11 +301,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 
     /* extract packet */
     MovementInfo movementInfo;
-    ObjectGuid guid;
-
-    recvData >> guid.ReadAsPacked();
-    movementInfo.guid = guid;
-    movementInfo.FillContentFromPacket(&recvData);
+    movementInfo.FillContentFromPacket(&recvData, true);
     recvData.rfinish();                         // prevent warnings spam
 
     // prevent tampered movement data
@@ -376,8 +372,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     mover->UpdateMovementInfo(movementInfo);
     WorldPacket data(opcode, recvData.size());
     movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
-    data << movementInfo.guid.WriteAsPacked();
-    movementInfo.WriteContentIntoPacket(&data);
+    movementInfo.WriteContentIntoPacket(&data, true);
     mover->SendMessageToSet(&data, _player);
 
     // Some vehicles allow the passenger to turn by himself
@@ -514,15 +509,8 @@ void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recvData)
 void WorldSession::HandleMoveNotActiveMover(WorldPacket &recvData)
 {
     TC_LOG_DEBUG("network", "WORLD: Recvd CMSG_MOVE_NOT_ACTIVE_MOVER");
-
-    ObjectGuid old_mover_guid;
-    recvData >> old_mover_guid.ReadAsPacked();
-
     MovementInfo mi;
-    mi.FillContentFromPacket(&recvData);
-
-    mi.guid = old_mover_guid;
-
+    mi.FillContentFromPacket(&recvData, true);
     _player->m_movementInfo = mi;
 }
 
