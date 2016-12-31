@@ -2671,7 +2671,6 @@ MovementInfo WorldObject::GetMovementInfo() const
         GetOrientation()
         );
 
-    // 0x00000200
     if (GetUnitMovementFlags() & MOVEMENTFLAG_ONTRANSPORT)
     {
         mInfo.transport.guid = GetTransGUID();
@@ -2683,14 +2682,12 @@ MovementInfo WorldObject::GetMovementInfo() const
             mInfo.transport.time2 = m_movementInfo.transport.time2;
     }
 
-    // 0x02200000
     if ((GetUnitMovementFlags() & (MOVEMENTFLAG_SWIMMING | MOVEMENTFLAG_FLYING))
         || (m_movementInfo.flags2 & MOVEMENTFLAG2_ALWAYS_ALLOW_PITCHING))
         mInfo.pitch = m_movementInfo.pitch;
 
     mInfo.SetFallTime(m_movementInfo.fallTime);
 
-    // 0x00001000
     if (GetUnitMovementFlags() & MOVEMENTFLAG_FALLING)
     {
         mInfo.jump.zspeed = m_movementInfo.jump.zspeed;
@@ -2699,7 +2696,6 @@ MovementInfo WorldObject::GetMovementInfo() const
         mInfo.jump.xyspeed = m_movementInfo.jump.xyspeed;
     }
 
-    // 0x04000000
     if (GetUnitMovementFlags() & MOVEMENTFLAG_SPLINE_ELEVATION)
         mInfo.splineElevation = m_movementInfo.splineElevation;
 
