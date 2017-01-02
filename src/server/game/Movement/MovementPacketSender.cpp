@@ -41,7 +41,7 @@ void MovementPacketSender::SendTeleportAckPacket(Player* player)
 
 void MovementPacketSender::SendTeleportPacket(Unit* unit)
 {
-    WorldPacket data(MSG_MOVE_TELEPORT, 38);
+    WorldPacket data(MSG_MOVE_TELEPORT, 38); // @todo: size here is wrong. a MOVE_TELEPORT can be bigger
     unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
     unit->SendMessageToSet(&data, false);
 }
