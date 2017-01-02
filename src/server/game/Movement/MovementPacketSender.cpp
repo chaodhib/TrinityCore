@@ -65,7 +65,7 @@ void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype
     Player* mover = unit->GetPlayerMovingMe();
     if (!mover)
     {
-        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendSpeedChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
         return;
     }
 
@@ -85,7 +85,7 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
     Player* mover = unit->GetPlayerMovingMe();
     if (!mover)
     {
-        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendSpeedChangeToObservers: Incorrect use of the function. It was called on a unit controlled by the server!");
         return;
     }
 
@@ -96,7 +96,7 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
     unit->SendMessageToSet(&data, mover);
 }
 
-void MovementPacketSender::SendSpeedChangeServerMoved(Unit* unit, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype)
 {
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][0], 8 + 4);
@@ -172,7 +172,7 @@ void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFla
         case MOVEMENTFLAG_FALLING_SLOW:         opcode = apply ? SMSG_MOVE_FEATHER_FALL :       SMSG_MOVE_NORMAL_FALL; break;
         case MOVEMENTFLAG_DISABLE_GRAVITY:      opcode = apply ? SMSG_MOVE_GRAVITY_DISABLE :    SMSG_MOVE_GRAVITY_ENABLE; break;
         default:
-            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToMover: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
             return;
     }
 
@@ -196,7 +196,7 @@ void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFla
     {
         case MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY: opcode = apply ? SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY : SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY; break;
         default:
-            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag2 (%d), data not sent to client.", mFlag);
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToMover: Unsupported MovementFlag2 (%d), data not sent to client.", mFlag);
             return;
     }
 
@@ -218,7 +218,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
         case MOVEMENTFLAG_FALLING_SLOW:         opcode = MSG_MOVE_FEATHER_FALL; break;
         case MOVEMENTFLAG_DISABLE_GRAVITY:      opcode = MSG_MOVE_GRAVITY_CHNG; break;
         default:
-            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToObservers: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
             return;
     }
 
@@ -234,7 +234,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
     {
         case MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY:     opcode = MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY; break;
         default:
-            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToObservers: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
             return;
     }
 
@@ -243,7 +243,7 @@ void MovementPacketSender::SendMovementFlagChangeToObservers(Unit* unit, Movemen
     unit->SendMessageToSet(&data, false);
 }
 
-void MovementPacketSender::SendMovementFlagChangeServerMoved(Unit* unit, MovementFlags mFlag, bool apply)
+void MovementPacketSender::SendMovementFlagChangeToAll(Unit* unit, MovementFlags mFlag, bool apply)
 {
     // MOVEMENTFLAG_CAN_FLY & MOVEMENTFLAG2_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY have no equivalent to the player controlled opcodes.
     Opcodes opcode;
@@ -255,7 +255,7 @@ void MovementPacketSender::SendMovementFlagChangeServerMoved(Unit* unit, Movemen
         case MOVEMENTFLAG_FALLING_SLOW:     opcode = apply ? SMSG_SPLINE_MOVE_FEATHER_FALL      : SMSG_SPLINE_MOVE_NORMAL_FALL; break;
         case MOVEMENTFLAG_HOVER:            opcode = apply ? SMSG_SPLINE_MOVE_SET_HOVER         : SMSG_SPLINE_MOVE_UNSET_HOVER; break;
         default:
-            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeServerMoved: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendMovementFlagChangeToAll: Unsupported MovementFlag (%d), data not sent to client.", mFlag);
             return;
     }
 
@@ -270,7 +270,7 @@ void MovementPacketSender::SendMovementFlagChangeServerMoved(Unit* unit, Movemen
     if (unit->IsMovedByPlayer())
         SendMovementFlagChangeToMover(unit, mFlag, apply);
     else
-        SendMovementFlagChangeServerMoved(unit, mFlag, apply);
+        SendMovementFlagChangeToAll(unit, mFlag, apply);
 }
 
  void MovementPacketSender::SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply)

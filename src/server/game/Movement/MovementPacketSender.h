@@ -35,7 +35,7 @@ class MovementPacketSender
         static void SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate);
         static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype);
         // Only use this method if the moving unit is controlled/moved by the server
-        static void SendSpeedChangeServerMoved(Unit* unit, UnitMoveType mtype);
+        static void SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype);
 
         static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
         static void SendKnockBackToObservers(Player* player);
@@ -52,7 +52,7 @@ class MovementPacketSender
         static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags2 mFlag);
 
         // to be used on a unit controlled & moved by the server
-        static void SendMovementFlagChangeServerMoved(Unit* unit, MovementFlags mFlag, bool apply);
+        static void SendMovementFlagChangeToAll(Unit* unit, MovementFlags mFlag, bool apply);
 
     private:
         static Opcodes const moveTypeToOpcode[MAX_MOVE_TYPE][3];

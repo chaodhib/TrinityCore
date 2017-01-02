@@ -9141,7 +9141,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate)
     else
     {
         SetSpeedRateReal(mtype, rate);
-        MovementPacketSender::SendSpeedChangeServerMoved(this, mtype);
+        MovementPacketSender::SendSpeedChangeToAll(this, mtype);
     }
 }
 
