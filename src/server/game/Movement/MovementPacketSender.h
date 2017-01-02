@@ -41,6 +41,13 @@ class MovementPacketSender
         static void SendKnockBackToObservers(Player* player);
 
     public:
+        /*
+        use one of these 2 methods to change an unit's movement flag.
+        Be aware, not all flags are supported by the method and it depends on who controls the unit (player controlled or server controlled).
+        ! The change is done as soon as the method returns for units controlled by the server but 
+        not for units controlled by players (Player, Vehicule, MCed creatures,..). In the latter case, first a packet has to be sent to the 
+        controller's client and an ack back must be received before the change is acted !
+        */
         static void SendMovementFlagChange(Unit* unit, MovementFlags mFlag, bool apply);
         static void SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply);
 
