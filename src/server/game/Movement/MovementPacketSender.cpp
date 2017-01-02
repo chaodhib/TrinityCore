@@ -21,13 +21,20 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
-void MovementPacketSender::SendHeightChange(Player* player, bool mounted)
+void MovementPacketSender::SendHeightChangeToMover(Unit* unit, float newRate)
 {
-    WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, player->GetPackGUID().size() + 4 + 4);
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
-    data << player->GetCollisionHeight(mounted);
-    player->GetSession()->SendPacket(&data);
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendHeightChangeToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
+    WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, unit->GetPackGUID().size() + 4 + 4);
+    data << unit->GetPackGUID();
+    data << unit->GetMovementCounterAndInc();
+    data << newRate;
+    mover->GetSession()->SendPacket(&data);
 }
 
 void MovementPacketSender::SendTeleportAckPacket(Player* player)
@@ -129,29 +136,6 @@ void MovementPacketSender::SendKnockBackToObservers(Player* player)
 
     player->SendMessageToSet(&data, false);
 }
-
-//    // apply
-//    {
-//        // Step1 Sent by the server to the mover's client       // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers (all of these should be renamed to SMSG! Confirmed by sniff analysis)
-//        { SMSG_FORCE_MOVE_ROOT,                                 CMSG_FORCE_MOVE_ROOT_ACK,                                   MSG_MOVE_ROOT },
-//        { SMSG_MOVE_WATER_WALK,                                 CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
-//        { SMSG_MOVE_SET_HOVER,                                  CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
-//        { SMSG_MOVE_SET_CAN_FLY,                                CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
-//        { SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
-//        { SMSG_MOVE_FEATHER_FALL,                               CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
-//        { SMSG_MOVE_GRAVITY_ENABLE,                             CMSG_MOVE_GRAVITY_ENABLE_ACK,                               MSG_MOVE_GRAVITY_CHNG } // todo: confirm these
-//    },
-//    // unapply
-//    {
-//        { SMSG_FORCE_MOVE_UNROOT,                               CMSG_FORCE_MOVE_UNROOT_ACK,                                 MSG_MOVE_UNROOT },
-//        { SMSG_MOVE_LAND_WALK,                                  CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
-//        { SMSG_MOVE_UNSET_HOVER,                                CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
-//        { SMSG_MOVE_UNSET_CAN_FLY,                              CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
-//        { SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,  CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
-//        { SMSG_MOVE_NORMAL_FALL,                                CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
-//        { SMSG_MOVE_GRAVITY_DISABLE,                            CMSG_MOVE_GRAVITY_DISABLE_ACK,                              MSG_MOVE_GRAVITY_CHNG } // todo: confirm these
-//    }
-
 
 void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply)
 {

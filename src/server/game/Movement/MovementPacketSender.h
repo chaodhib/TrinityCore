@@ -24,22 +24,95 @@
 
 class Player;
 
+
+//    ----------------------
+//    movement flag changes for player controlled units:
+//    >>> APPLY
+//    {
+//        // Step1 Sent by the server to the mover's client       // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers (all of these should be renamed to SMSG! Confirmed by sniff analysis)
+//        { SMSG_FORCE_MOVE_ROOT,                                 CMSG_FORCE_MOVE_ROOT_ACK,                                   MSG_MOVE_ROOT },
+//        { SMSG_MOVE_WATER_WALK,                                 CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
+//        { SMSG_MOVE_SET_HOVER,                                  CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
+//        { SMSG_MOVE_SET_CAN_FLY,                                CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
+//        { SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
+//        { SMSG_MOVE_FEATHER_FALL,                               CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
+//        { SMSG_MOVE_GRAVITY_ENABLE,                             CMSG_MOVE_GRAVITY_ENABLE_ACK,                               MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these! the third opcode appears to also be used on NPCs
+//    },
+//    >>> UNAPPLY
+//    {
+//        { SMSG_FORCE_MOVE_UNROOT,                               CMSG_FORCE_MOVE_UNROOT_ACK,                                 MSG_MOVE_UNROOT },
+//        { SMSG_MOVE_LAND_WALK,                                  CMSG_MOVE_WATER_WALK_ACK,                                   MSG_MOVE_WATER_WALK },
+//        { SMSG_MOVE_UNSET_HOVER,                                CMSG_MOVE_HOVER_ACK,                                        MSG_MOVE_HOVER },
+//        { SMSG_MOVE_UNSET_CAN_FLY,                              CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
+//        { SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,  CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
+//        { SMSG_MOVE_NORMAL_FALL,                                CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
+//        { SMSG_MOVE_GRAVITY_DISABLE,                            CMSG_MOVE_GRAVITY_DISABLE_ACK,                              MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these!
+//    }
+//
+//    ----------------------
+//    Speed changes on player controlled units:
+//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
+//        { SMSG_FORCE_WALK_SPEED_CHANGE,                       CMSG_FORCE_WALK_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_WALK_SPEED },
+//        { SMSG_FORCE_RUN_SPEED_CHANGE,                        CMSG_FORCE_RUN_SPEED_CHANGE_ACK,                            MSG_MOVE_SET_RUN_SPEED },
+//        { SMSG_FORCE_SWIM_SPEED_CHANGE,                       CMSG_FORCE_SWIM_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_RUN_BACK_SPEED },
+//        { SMSG_FORCE_SWIM_BACK_SPEED_CHANGE,                  CMSG_FORCE_SWIM_BACK_SPEED_CHANGE_ACK,                      MSG_MOVE_SET_SWIM_SPEED }, // @todo confirm by sniff
+//        { SMSG_FORCE_TURN_RATE_CHANGE,                        CMSG_FORCE_TURN_RATE_CHANGE_ACK,                            MSG_MOVE_SET_SWIM_BACK_SPEED }, // @todo confirm by sniff
+//        { SMSG_FORCE_FLIGHT_SPEED_CHANGE,                     CMSG_FORCE_FLIGHT_SPEED_CHANGE_ACK,                         MSG_MOVE_SET_TURN_RATE },
+//        { SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE,                CMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE_ACK,                    MSG_MOVE_SET_FLIGHT_BACK_SPEED }, // @todo confirm by sniff
+//        { SMSG_FORCE_PITCH_RATE_CHANGE,                       CMSG_FORCE_PITCH_RATE_CHANGE_ACK,                           MSG_MOVE_SET_PITCH_RATE }, // @todo confirm by sniff
+//
+//    ----------------------
+//    Other type of changes
+//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
+//        { SMSG_MOVE_SET_COLLISION_HGT,                        CMSG_MOVE_SET_COLLISION_HGT_ACK,                            MSG_MOVE_SET_COLLISION_HGT },
+//        { MSG_MOVE_TELEPORT_ACK,                              MSG_MOVE_TELEPORT_ACK,                                      MSG_MOVE_TELEPORT }, // not sure if there are indeed 3 non concurrent steps for this one
+//
+//    ----------------------
+//    movement flag changes for server controlled units:
+//    apply
+//    {
+//        SMSG_SPLINE_MOVE_GRAVITY_DISABLE,
+//        SMSG_SPLINE_MOVE_ROOT,
+//        SMSG_SPLINE_MOVE_WATER_WALK,
+//        SMSG_SPLINE_MOVE_FEATHER_FALL,
+//        SMSG_SPLINE_MOVE_SET_HOVER,
+//    }
+//    unapply
+//    {
+//        SMSG_SPLINE_MOVE_GRAVITY_ENABLE,
+//        SMSG_SPLINE_MOVE_UNROOT,
+//        SMSG_SPLINE_MOVE_LAND_WALK,
+//        SMSG_SPLINE_MOVE_NORMAL_FALL,
+//        SMSG_SPLINE_MOVE_UNSET_HOVER,
+//    }
+
 class MovementPacketSender
 {
     public:
-        static void SendHeightChange(Player* player, bool mounted);
-        static void SendTeleportAckPacket(Player* player);
-        static void SendTeleportPacket(Unit* unit);
+        /* height change */
+        static void SendHeightChangeToMover(Unit* unit, float newRate);
+        // static void SendHeightChangeToObservers();
+        // static void SendHeightChangeToAll();
 
+        /* teleport */
+        // not entirely sure if teleport works the same way as the other methods here (as in: the change is acted on the server, only after receiving the client's ack. then 
+        // and only then is a packet sent to the observers). need more data analysis
+        static void SendTeleportAckPacket(Player* player); // rename to SendTeleportToMover?
+        static void SendTeleportPacket(Unit* unit); // rename to SendTeleportToobservers?
+
+        /* speed change */
         // Only use this method if the moving unit is controlled/moved by a player
         static void SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate);
         static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype);
         // Only use this method if the moving unit is controlled/moved by the server
         static void SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype);
 
+        /* knocback */
         static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
         static void SendKnockBackToObservers(Player* player);
+        // static void SendKnockBackToAll(); // @todo
 
+        /* movement flag change */
     public:
         /*
         use one of these 2 methods to change an unit's movement flag.
