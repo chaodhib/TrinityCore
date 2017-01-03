@@ -285,6 +285,11 @@ Unit::Unit(bool isWorldObject) :
     m_extraAttacks = 0;
     m_canDualWield = false;
 
+    m_movementCounter = 0;
+
+    lastMoveClientTimestamp = 0;
+    lastMoveServerTimestamp = 0;
+
     m_rootTimes = 0;
 
     m_state = 0;
@@ -14146,11 +14151,6 @@ void Unit::Whisper(uint32 textId, Player* target, bool isBossWhisper /*= false*/
     target->SendDirectMessage(&data);
 }
 
-uint32 Unit::GetMovementCounterAndInc()
-{
-    return 0; // unimplemented
-}
-
 void Unit::ValidateNewMovementInfo(MovementInfo* mi)
 {
     //! Anti-cheat checks.
@@ -14244,7 +14244,6 @@ void Unit::ApplyChangesOfMovementInfo(MovementInfo movementInfo)
 
 void Unit::UpdateMovementInfo(MovementInfo movementInfo)
 {
-    ValidateNewMovementInfo(&movementInfo);
     ApplyChangesOfMovementInfo(movementInfo);
     m_movementInfo = movementInfo;
 }

@@ -2174,7 +2174,12 @@ class TC_GAME_API Unit : public WorldObject
         bool IsFlying() const   { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING | MOVEMENTFLAG_DISABLE_GRAVITY); }
         bool IsFalling() const;
 
-        uint32 GetMovementCounterAndInc();
+        uint32 GetMovementCounterAndInc() { return m_movementCounter++; }
+        uint32 GetMovementCounter() const { return m_movementCounter; }
+        void SetLastMoveClientTimestamp(uint32 timestamp) { lastMoveClientTimestamp = timestamp; }
+        void SetLastMoveServerTimestamp(uint32 timestamp) { lastMoveServerTimestamp = timestamp; }
+        uint32 GetLastMoveClientTimestamp() const { return lastMoveClientTimestamp; }
+        uint32 GetLastMoveServerTimestamp() const { return lastMoveServerTimestamp; }
 
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 
@@ -2310,6 +2315,17 @@ class TC_GAME_API Unit : public WorldObject
         void SetConfused(bool apply);
         void SetStunned(bool apply);
         void SetRooted(bool apply);
+
+        /* Player Movement fields START*/
+        // Timestamp on client clock of the moment the most recently processed movement packet was SENT by the client
+        uint32 lastMoveClientTimestamp;
+
+        // Timestamp on server clock of the moment the most recently processed movement packet was RECEIVED from the client
+        uint32 lastMoveServerTimestamp;
+
+        // when a player controls this unit, and when change is made to this unit which requires an ack from the client to be acted (change of speed for example), this movementCounter is incremented
+        uint32 m_movementCounter;
+        /* Player Movement fields END*/
 
         uint32 m_rootTimes;
 

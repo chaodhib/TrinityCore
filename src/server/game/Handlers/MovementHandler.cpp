@@ -312,7 +312,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         return;
 
     /* handle special cases */
-    if (movementInfo.HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT))
+    if (movementInfo.HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT)) // @todo: move this stuff. CMSG_MOVE_CHNG_TRANSPORT should be handled elsewhere than here.
     {
         // transports size limited
         // (also received at zeppelin leave by some reason with t_* as absolute in continent coordinates, can be safely skipped)
@@ -364,14 +364,21 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.pos.GetPositionX(), movementInfo.pos.GetPositionY(), movementInfo.pos.GetPositionZ()));
     }
 
+    /* validate (and correct if necessary) new movement packet */
+    mover->ValidateNewMovementInfo(&movementInfo);
+
+    /* process position-change */
+    mover->SetLastMoveClientTimestamp(movementInfo.time);
+    mover->SetLastMoveServerTimestamp(getMSTime());
+
     /*----------------------*/
     if (m_clientTimeDelay == 0)
         m_clientTimeDelay = getMSTime() - movementInfo.time;
 
-    /* process position-change */
-    mover->UpdateMovementInfo(movementInfo);
-    WorldPacket data(opcode, recvData.size());
     movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
+    mover->UpdateMovementInfo(movementInfo);
+
+    WorldPacket data(opcode, recvData.size());
     movementInfo.WriteContentIntoPacket(&data, true);
     mover->SendMessageToSet(&data, _player);
 
