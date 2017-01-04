@@ -588,6 +588,40 @@ enum UnitMoveType
 TC_GAME_API extern float baseMoveSpeed[MAX_MOVE_TYPE];
 TC_GAME_API extern float playerBaseMoveSpeed[MAX_MOVE_TYPE];
 
+enum MovementChangeType
+{
+    ROOT,
+    WATER_WALK,
+    SET_HOVER,
+    SET_CAN_FLY,
+    SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,
+    FEATHER_FALL,
+    GRAVITY_DISABLE,
+
+    SPEED_CHANGE_WALK,
+    SPEED_CHANGE_RUN,
+    SPEED_CHANGE_RUN_BACK,
+    SPEED_CHANGE_SWIM,
+    SPEED_CHANGE_SWIM_BACK,
+    RATE_CHANGE_TURN,
+    SPEED_CHANGE_FLIGHT_SPEED,
+    SPEED_CHANGE_FLIGHT_BACK_SPEED,
+    RATE_CHANGE_PITCH,
+
+    SET_COLLISION_HGT,
+    TELEPORT
+};
+
+struct PlayerMovementPendingChange
+{
+    uint32 movementCounter;
+    MovementChangeType movementChangeType;
+
+    float newValue; // used if speed or height change
+    bool apply; // used if movement flag change
+    Position pos; // used if teleport
+};
+
 enum WeaponAttackType : uint8
 {
     BASE_ATTACK   = 0,
@@ -2180,6 +2214,8 @@ class TC_GAME_API Unit : public WorldObject
         void SetLastMoveServerTimestamp(uint32 timestamp) { lastMoveServerTimestamp = timestamp; }
         uint32 GetLastMoveClientTimestamp() const { return lastMoveClientTimestamp; }
         uint32 GetLastMoveServerTimestamp() const { return lastMoveServerTimestamp; }
+        PlayerMovementPendingChange PopMovementChange();
+        void PushMovementChange(PlayerMovementPendingChange newChange);
 
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 
@@ -2325,6 +2361,7 @@ class TC_GAME_API Unit : public WorldObject
 
         // when a player controls this unit, and when change is made to this unit which requires an ack from the client to be acted (change of speed for example), this movementCounter is incremented
         uint32 m_movementCounter;
+        std::queue<PlayerMovementPendingChange> pendingPlayerMovementChanges;
         /* Player Movement fields END*/
 
         uint32 m_rootTimes;

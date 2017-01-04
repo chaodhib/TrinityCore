@@ -13481,6 +13481,19 @@ void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
     SendMessageToSet(&data, false);
 }
 
+PlayerMovementPendingChange Unit::PopMovementChange()
+{
+
+    PlayerMovementPendingChange result = pendingPlayerMovementChanges.front();
+    pendingPlayerMovementChanges.pop();
+    return result;
+}
+
+void Unit::PushMovementChange(PlayerMovementPendingChange newChange)
+{
+    pendingPlayerMovementChanges.push(newChange);
+}
+
 void Unit::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)
 {
     float addRage;
