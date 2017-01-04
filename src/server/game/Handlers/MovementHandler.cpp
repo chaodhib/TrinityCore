@@ -285,12 +285,15 @@ MSG_MOVE_START_DESCEND
 void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
 {
     uint16 opcode = recvData.GetOpcode();
-
-    Unit* mover = _player->m_unitMovedByMe;
+    Unit* mover = _player->GetUnitBeingMoved();
+    Player* plrMover = mover->ToPlayer();
 
     ASSERT(mover != NULL);                      // there must always be a mover
 
-    Player* plrMover = mover->ToPlayer();
+    /* extract packet */
+    MovementInfo movementInfo;
+    movementInfo.FillContentFromPacket(&recvData, true);
+    recvData.rfinish();                         // prevent warnings spam
 
     // ignore, waiting processing in WorldSession::HandleMoveWorldportAckOpcode and WorldSession::HandleMoveTeleportAck
     if (plrMover && plrMover->IsBeingTeleported())
@@ -298,11 +301,6 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         recvData.rfinish();                     // prevent warnings spam
         return;
     }
-
-    /* extract packet */
-    MovementInfo movementInfo;
-    movementInfo.FillContentFromPacket(&recvData, true);
-    recvData.rfinish();                         // prevent warnings spam
 
     // prevent tampered movement data
     if (movementInfo.guid != mover->GetGUID())
