@@ -8382,7 +8382,7 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (charm->GetTypeId() == TYPEID_UNIT)
                 charm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
- 		MovementPacketSender::SendHeightChange(player, true);
+ 		MovementPacketSender::SendHeightChangeToMover(player, true);
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
@@ -8397,7 +8397,7 @@ void Unit::Dismount()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
     if (Player* thisPlayer = ToPlayer())
-        MovementPacketSender::SendHeightChange(thisPlayer, false);
+        MovementPacketSender::SendHeightChangeToMover(thisPlayer, false);
 
     WorldPacket data(SMSG_DISMOUNT, 8);
     data << GetPackGUID();
