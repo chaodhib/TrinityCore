@@ -471,18 +471,36 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     movementInfo.FillContentFromPacket(&recvData);
     recvData >> speedReceived;
 
-    //// TODO USING MOVEMENT COUNTER AND A QUEUE
-    //// verify that indeed the client is replying with the same speed that was sent to him
-    //float speedSent;
-    //if (std::fabs(speedSent - speedReceived) > 0.01f)
-    //{
-    //    TC_LOG_DEBUG("misc", "Player %s from account id %u kicked for incorrect speed (must be %f instead %f)",
-    //        _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
-    //    _player->GetSession()->KickPlayer();
-    //}
+    TC_LOG_ERROR("custom", "received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
 
-    // @TODO FOR DEBUG ONLY. CHANGE THIS:
-    float speedSent = speedReceived;
+    // verify that indeed the client is replying with the changes that were send to him
+    PlayerMovementPendingChange pendingChange = mover->PopMovementChange();
+    float speedSent = pendingChange.newValue;
+    MovementChangeType changeType = pendingChange.movementChangeType;
+    UnitMoveType moveTypeSent;
+    switch (changeType)
+    {
+        case SPEED_CHANGE_WALK:                 moveTypeSent = MOVE_WALK; break;
+        case SPEED_CHANGE_RUN:                  moveTypeSent = MOVE_RUN; break;
+        case SPEED_CHANGE_RUN_BACK:             moveTypeSent = MOVE_RUN_BACK; break;
+        case SPEED_CHANGE_SWIM:                 moveTypeSent = MOVE_SWIM; break;
+        case SPEED_CHANGE_SWIM_BACK:            moveTypeSent = MOVE_SWIM_BACK; break;
+        case RATE_CHANGE_TURN:                  moveTypeSent = MOVE_TURN_RATE; break;
+        case SPEED_CHANGE_FLIGHT_SPEED:         moveTypeSent = MOVE_FLIGHT; break;
+        case SPEED_CHANGE_FLIGHT_BACK_SPEED:    moveTypeSent = MOVE_FLIGHT_BACK; break;
+        case RATE_CHANGE_PITCH:                 moveTypeSent = MOVE_PITCH_RATE; break;
+        default:
+            TC_LOG_ERROR("network", "WorldSession::HandleForceSpeedChangeAck: Unsupported MovementChangeType (%d)", changeType);
+            return;
+    }
+
+    if (std::fabs(speedSent - speedReceived) > 0.01f || moveTypeSent!= move_type)
+    {
+        TC_LOG_INFO("cheat", "Player %s from account id %u kicked for incorrect data returned in an ack",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
+        _player->GetSession()->KickPlayer();
+        return;
+    }
 
     float newSpeedRate = speedSent / (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
     TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);

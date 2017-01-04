@@ -76,13 +76,33 @@ void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype
         return;
     }
 
+    float newSpeedFlat = newRate * (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]); // this line is a fucking mess. what if the unit is a creature MCed by a player? this whole speed rate thing needs to die. In the meantime: use mover or unit ?
+    uint32 mCounter = unit->GetMovementCounterAndInc();
+    PlayerMovementPendingChange pendingChange;
+    pendingChange.newValue = newSpeedFlat;
+    switch (mtype)
+    {
+        case MOVE_WALK:         pendingChange.movementChangeType = SPEED_CHANGE_WALK; break;
+        case MOVE_RUN:          pendingChange.movementChangeType = SPEED_CHANGE_RUN; break;
+        case MOVE_RUN_BACK:     pendingChange.movementChangeType = SPEED_CHANGE_RUN_BACK; break;
+        case MOVE_SWIM:         pendingChange.movementChangeType = SPEED_CHANGE_SWIM; break;
+        case MOVE_SWIM_BACK:    pendingChange.movementChangeType = SPEED_CHANGE_SWIM_BACK; break;
+        case MOVE_TURN_RATE:    pendingChange.movementChangeType = RATE_CHANGE_TURN; break;
+        case MOVE_FLIGHT:       pendingChange.movementChangeType = SPEED_CHANGE_FLIGHT_SPEED; break;
+        case MOVE_FLIGHT_BACK:  pendingChange.movementChangeType = SPEED_CHANGE_FLIGHT_BACK_SPEED; break;
+        case MOVE_PITCH_RATE:   pendingChange.movementChangeType = RATE_CHANGE_PITCH; break;
+        default:
+            TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendSpeedChangeToMover: Unsupported UnitMoveType (%d)", mtype);
+            return;
+    }
+    unit->PushMovementChange(pendingChange);
+
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);
     data << unit->GetPackGUID();
-    data << unit->GetMovementCounterAndInc();
+    data << mCounter;
     if (mtype == MOVE_RUN)
         data << uint8(1);                               // unknown byte added in 2.1.0
-    float newSpeedFlat = newRate * (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]); // this line is a fucking mess. what if the unit is a creature MCed by a player? this whole speed rate thing needs to die. In the meantime: use mover or unit ?
     data << newSpeedFlat;
     mover->GetSession()->SendPacket(&data);
 }
