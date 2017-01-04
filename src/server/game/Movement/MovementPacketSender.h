@@ -36,7 +36,7 @@ class Player;
 //        { SMSG_MOVE_SET_CAN_FLY,                                CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
 //        { SMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,    CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
 //        { SMSG_MOVE_FEATHER_FALL,                               CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
-//        { SMSG_MOVE_GRAVITY_ENABLE,                             CMSG_MOVE_GRAVITY_ENABLE_ACK,                               MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these! the third opcode appears to also be used on NPCs
+//        { SMSG_MOVE_GRAVITY_DISABLE,                            CMSG_MOVE_GRAVITY_DISABLE_ACK,                              MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these!
 //    },
 //    >>> UNAPPLY
 //    {
@@ -46,7 +46,7 @@ class Player;
 //        { SMSG_MOVE_UNSET_CAN_FLY,                              CMSG_MOVE_SET_CAN_FLY_ACK,                                  MSG_MOVE_UPDATE_CAN_FLY },
 //        { SMSG_MOVE_UNSET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY,  CMSG_MOVE_SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY_ACK,      MSG_MOVE_UPDATE_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY },
 //        { SMSG_MOVE_NORMAL_FALL,                                CMSG_MOVE_FEATHER_FALL_ACK,                                 MSG_MOVE_FEATHER_FALL },
-//        { SMSG_MOVE_GRAVITY_DISABLE,                            CMSG_MOVE_GRAVITY_DISABLE_ACK,                              MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these!
+//        { SMSG_MOVE_GRAVITY_ENABLE,                             CMSG_MOVE_GRAVITY_ENABLE_ACK,                               MSG_MOVE_GRAVITY_CHNG } // @todo: confirm these! the third opcode appears to also be used on NPCs
 //    }
 //
 //    ----------------------
@@ -54,10 +54,11 @@ class Player;
 //        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
 //        { SMSG_FORCE_WALK_SPEED_CHANGE,                       CMSG_FORCE_WALK_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_WALK_SPEED },
 //        { SMSG_FORCE_RUN_SPEED_CHANGE,                        CMSG_FORCE_RUN_SPEED_CHANGE_ACK,                            MSG_MOVE_SET_RUN_SPEED },
-//        { SMSG_FORCE_SWIM_SPEED_CHANGE,                       CMSG_FORCE_SWIM_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_RUN_BACK_SPEED },
-//        { SMSG_FORCE_SWIM_BACK_SPEED_CHANGE,                  CMSG_FORCE_SWIM_BACK_SPEED_CHANGE_ACK,                      MSG_MOVE_SET_SWIM_SPEED }, // @todo confirm by sniff
-//        { SMSG_FORCE_TURN_RATE_CHANGE,                        CMSG_FORCE_TURN_RATE_CHANGE_ACK,                            MSG_MOVE_SET_SWIM_BACK_SPEED }, // @todo confirm by sniff
-//        { SMSG_FORCE_FLIGHT_SPEED_CHANGE,                     CMSG_FORCE_FLIGHT_SPEED_CHANGE_ACK,                         MSG_MOVE_SET_TURN_RATE },
+//        { SMSG_FORCE_RUN_BACK_SPEED_CHANGE,                   CMSG_FORCE_RUN_BACK_SPEED_CHANGE_ACK,                       MSG_MOVE_SET_RUN_BACK_SPEED },
+//        { SMSG_FORCE_SWIM_SPEED_CHANGE,                       CMSG_FORCE_SWIM_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_SWIM_SPEED },
+//        { SMSG_FORCE_SWIM_BACK_SPEED_CHANGE,                  CMSG_FORCE_SWIM_BACK_SPEED_CHANGE_ACK,                      MSG_MOVE_SET_SWIM_BACK_SPEED }, // @todo confirm by sniff
+//        { SMSG_FORCE_TURN_RATE_CHANGE,                        CMSG_FORCE_TURN_RATE_CHANGE_ACK,                            MSG_MOVE_SET_TURN_RATE }, // @todo confirm by sniff
+//        { SMSG_FORCE_FLIGHT_SPEED_CHANGE,                     CMSG_FORCE_FLIGHT_SPEED_CHANGE_ACK,                         MSG_MOVE_SET_FLIGHT_SPEED },
 //        { SMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE,                CMSG_FORCE_FLIGHT_BACK_SPEED_CHANGE_ACK,                    MSG_MOVE_SET_FLIGHT_BACK_SPEED }, // @todo confirm by sniff
 //        { SMSG_FORCE_PITCH_RATE_CHANGE,                       CMSG_FORCE_PITCH_RATE_CHANGE_ACK,                           MSG_MOVE_SET_PITCH_RATE }, // @todo confirm by sniff
 //
@@ -65,7 +66,7 @@ class Player;
 //    Other type of changes
 //        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
 //        { SMSG_MOVE_SET_COLLISION_HGT,                        CMSG_MOVE_SET_COLLISION_HGT_ACK,                            MSG_MOVE_SET_COLLISION_HGT },
-//        { MSG_MOVE_TELEPORT_ACK,                              MSG_MOVE_TELEPORT_ACK,                                      MSG_MOVE_TELEPORT }, // not sure if there are indeed 3 non concurrent steps for this one
+//        { MSG_MOVE_TELEPORT_ACK,                              MSG_MOVE_TELEPORT_ACK,                                      MSG_MOVE_TELEPORT },
 //
 //    ----------------------
 //    movement flag changes for server controlled units:
@@ -95,8 +96,6 @@ class MovementPacketSender
         // static void SendHeightChangeToAll();
 
         /* teleport */
-        // not entirely sure if teleport works the same way as the other methods here (as in: the change is acted on the server, only after receiving the client's ack. then 
-        // and only then is a packet sent to the observers). need more data analysis
         static void SendTeleportAckPacket(Player* player); // rename to SendTeleportToMover?
         static void SendTeleportPacket(Unit* unit); // rename to SendTeleportToobservers?
 
