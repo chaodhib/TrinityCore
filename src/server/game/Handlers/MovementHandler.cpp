@@ -474,7 +474,15 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     TC_LOG_ERROR("custom", "received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
 
     // verify that indeed the client is replying with the changes that were send to him
-    PlayerMovementPendingChange pendingChange = mover->PopMovementChange();
+    if (!mover->HasPendingMovementChange())
+    {
+        TC_LOG_INFO("cheat", "Player %s from account id %u kicked because no movement change ack was expected from this player",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+        _player->GetSession()->KickPlayer();
+        return;
+    }
+
+    PlayerMovementPendingChange pendingChange = mover->PopPendingMovementChange();
     float speedSent = pendingChange.newValue;
     MovementChangeType changeType = pendingChange.movementChangeType;
     UnitMoveType moveTypeSent;
@@ -497,7 +505,7 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     if (std::fabs(speedSent - speedReceived) > 0.01f || moveTypeSent!= move_type)
     {
         TC_LOG_INFO("cheat", "Player %s from account id %u kicked for incorrect data returned in an ack",
-            _player->GetName().c_str(), _player->GetSession()->GetAccountId(), _player->GetSpeed(move_type), speedReceived);
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
         _player->GetSession()->KickPlayer();
         return;
     }

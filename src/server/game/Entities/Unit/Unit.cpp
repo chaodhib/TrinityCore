@@ -13481,17 +13481,19 @@ void Unit::SendRemoveFromThreatListOpcode(HostileReference* pHostileReference)
     SendMessageToSet(&data, false);
 }
 
-PlayerMovementPendingChange Unit::PopMovementChange()
+PlayerMovementPendingChange Unit::PopPendingMovementChange()
 {
-
-    PlayerMovementPendingChange result = pendingPlayerMovementChanges.front();
-    pendingPlayerMovementChanges.pop();
+    TC_LOG_ERROR("custom", "PopPendingMovementChange called. queue size. BEFORE: %u", pendingMovementChanges.size());
+    PlayerMovementPendingChange result = pendingMovementChanges.front();
+    pendingMovementChanges.pop();
+    TC_LOG_ERROR("custom", "PopPendingMovementChange called. queue size. AFTER: %u", pendingMovementChanges.size());
     return result;
 }
 
-void Unit::PushMovementChange(PlayerMovementPendingChange newChange)
+void Unit::PushPendingMovementChange(PlayerMovementPendingChange newChange)
 {
-    pendingPlayerMovementChanges.push(newChange);
+    TC_LOG_ERROR("custom", "pushed new pending change. queue size before: %u type: %d. new value: %f", pendingMovementChanges.size(), newChange.movementChangeType, newChange.newValue);
+    pendingMovementChanges.push(newChange);
 }
 
 void Unit::RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker)

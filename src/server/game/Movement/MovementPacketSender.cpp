@@ -95,7 +95,7 @@ void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype
             TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendSpeedChangeToMover: Unsupported UnitMoveType (%d)", mtype);
             return;
     }
-    unit->PushMovementChange(pendingChange);
+    unit->PushPendingMovementChange(pendingChange);
 
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][1], mtype != MOVE_RUN ? 8 + 4 + 4 : 8 + 4 + 1 + 4);

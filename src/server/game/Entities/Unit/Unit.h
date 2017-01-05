@@ -2214,8 +2214,10 @@ class TC_GAME_API Unit : public WorldObject
         void SetLastMoveServerTimestamp(uint32 timestamp) { lastMoveServerTimestamp = timestamp; }
         uint32 GetLastMoveClientTimestamp() const { return lastMoveClientTimestamp; }
         uint32 GetLastMoveServerTimestamp() const { return lastMoveServerTimestamp; }
-        PlayerMovementPendingChange PopMovementChange();
-        void PushMovementChange(PlayerMovementPendingChange newChange);
+
+        PlayerMovementPendingChange PopPendingMovementChange();
+        void PushPendingMovementChange(PlayerMovementPendingChange newChange);
+        bool HasPendingMovementChange() const { return !pendingMovementChanges.empty(); }
 
         void RewardRage(uint32 damage, uint32 weaponSpeedHitFactor, bool attacker);
 
@@ -2361,7 +2363,7 @@ class TC_GAME_API Unit : public WorldObject
 
         // when a player controls this unit, and when change is made to this unit which requires an ack from the client to be acted (change of speed for example), this movementCounter is incremented
         uint32 m_movementCounter;
-        std::queue<PlayerMovementPendingChange> pendingPlayerMovementChanges;
+        std::queue<PlayerMovementPendingChange> pendingMovementChanges;
         /* Player Movement fields END*/
 
         uint32 m_rootTimes;
