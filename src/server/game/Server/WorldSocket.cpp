@@ -676,7 +676,7 @@ bool WorldSocket::HandlePing(WorldPacket& recvPacket)
         if (_worldSession)
         {
             _worldSession->SetLatency(latency);
-            _worldSession->ResetClientTimeDelay();
+            //_worldSession->ResetClientTimeDelay(); // need testing but i'm pretty sure this is not correct. this causes jump in the player time stream, which causes jitter.
         }
         else
         {
