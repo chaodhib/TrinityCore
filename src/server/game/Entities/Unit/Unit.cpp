@@ -14252,11 +14252,6 @@ void Unit::ValidateNewMovementInfo(MovementInfo* mi)
     #undef REMOVE_VIOLATING_FLAGS
 }
 
-void Unit::ApplyChangesOfMovementInfo(MovementInfo movementInfo)
-{
-     
-}
-
 void Unit::UpdateMovementInfo(MovementInfo movementInfo)
 {
     if (!IsMovedByPlayer())
