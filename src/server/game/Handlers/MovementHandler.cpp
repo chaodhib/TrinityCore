@@ -33,8 +33,6 @@
 #include "Vehicle.h"
 #include "MovementPacketSender.h"
 
-#define MOVEMENT_PACKET_TIME_DELAY 0
-
 void WorldSession::HandleMoveWorldportAckOpcode(WorldPacket & /*recvData*/)
 {
     TC_LOG_DEBUG("network", "WORLD: got MSG_MOVE_WORLDPORT_ACK.");
@@ -366,14 +364,6 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     mover->ValidateNewMovementInfo(&movementInfo);
 
     /* process position-change */
-    mover->SetLastMoveClientTimestamp(movementInfo.time);
-    mover->SetLastMoveServerTimestamp(getMSTime());
-
-    /*----------------------*/
-    if (m_clientTimeDelay == 0)
-        m_clientTimeDelay = getMSTime() - movementInfo.time;
-
-    movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
     mover->UpdateMovementInfo(movementInfo);
 
     WorldPacket data(opcode, recvData.size());
@@ -397,7 +387,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         return;
     }
 
-    mover->UpdatePosition(movementInfo.pos);
+    mover->UpdatePosition(movementInfo.pos); // unsure if this can be safely deleted since it is also called in "mover->UpdateMovementInfo(movementInfo)" but the above if blocks may influence the unit's orintation
 
     if (plrMover)                                            // nothing is charmed, or player charmed
     {

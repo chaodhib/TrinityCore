@@ -14259,6 +14259,21 @@ void Unit::ApplyChangesOfMovementInfo(MovementInfo movementInfo)
 
 void Unit::UpdateMovementInfo(MovementInfo movementInfo)
 {
-    ApplyChangesOfMovementInfo(movementInfo);
+    if (!IsMovedByPlayer())
+    {
+        TC_LOG_ERROR("entities.unit", "Unit::UpdateMovementInfo call on a unit not moved by a player. This should not happen.");
+        return;
+    }
+
+    SetLastMoveClientTimestamp(movementInfo.time); // unused for now. will be needed for speed cheat detection
+    SetLastMoveServerTimestamp(getMSTime()); // unused for now. will probably needed for stuff, you know
+
+    WorldSession* playerSession = GetPlayerMovingMe()->GetSession();
+    if (playerSession->GetClientTimeDelay() == 0)
+        playerSession->SetClientTimeDelay(getMSTime() - movementInfo.time);
+
+    movementInfo.time = movementInfo.time + playerSession->GetClientTimeDelay() + MOVEMENT_PACKET_TIME_DELAY;
+
+    UpdatePosition(movementInfo.pos);
     m_movementInfo = movementInfo;
 }

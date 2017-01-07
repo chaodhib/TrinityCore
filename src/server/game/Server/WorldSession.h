@@ -414,6 +414,8 @@ class TC_GAME_API WorldSession
         uint32 GetLatency() const { return m_latency; }
         void SetLatency(uint32 latency) { m_latency = latency; }
         void ResetClientTimeDelay() { m_clientTimeDelay = 0; }
+        void SetClientTimeDelay(uint32 delay) { m_clientTimeDelay = delay; }
+        uint32 GetClientTimeDelay() const { return m_clientTimeDelay; }
 
         std::atomic<int32> m_timeOutTime;
 

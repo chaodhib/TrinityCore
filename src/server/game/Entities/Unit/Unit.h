@@ -588,6 +588,8 @@ enum UnitMoveType
 TC_GAME_API extern float baseMoveSpeed[MAX_MOVE_TYPE];
 TC_GAME_API extern float playerBaseMoveSpeed[MAX_MOVE_TYPE];
 
+#define MOVEMENT_PACKET_TIME_DELAY 0
+
 enum MovementChangeType
 {
     ROOT,
