@@ -307,6 +307,9 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     if (!movementInfo.pos.IsPositionValid())
         return;
 
+    /* validate (and correct if necessary) new movement packet */
+    mover->ValidateNewMovementInfo(&movementInfo);
+
     /* handle special cases */
     if (movementInfo.HasMovementFlag(MOVEMENTFLAG_ONTRANSPORT)) // @todo: move this stuff. CMSG_MOVE_CHNG_TRANSPORT should be handled elsewhere than here.
     {
@@ -359,9 +362,6 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         // now client not include swimming flag in case jumping under water
         plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.pos.GetPositionX(), movementInfo.pos.GetPositionY(), movementInfo.pos.GetPositionZ()));
     }
-
-    /* validate (and correct if necessary) new movement packet */
-    mover->ValidateNewMovementInfo(&movementInfo);
 
     /* process position-change */
     mover->UpdateMovementInfo(movementInfo);
@@ -435,7 +435,6 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     }
 
     UnitMoveType move_type;
-    static char const* move_type_name[MAX_MOVE_TYPE] = {  "Walk", "Run", "RunBack", "Swim", "SwimBack", "TurnRate", "Flight", "FlightBack", "PitchRate" };
     switch (recvData.GetOpcode())
     {
         case CMSG_FORCE_WALK_SPEED_CHANGE_ACK:          move_type = MOVE_WALK;          break;
@@ -500,17 +499,11 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
         return;
     }
 
+    /* the client data has been verified. let's do the actual change now */
     float newSpeedRate = speedSent / (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
     TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
 
-    if (m_clientTimeDelay == 0)
-        m_clientTimeDelay = getMSTime() - movementInfo.time;
-
-    movementInfo.time = movementInfo.time + m_clientTimeDelay + MOVEMENT_PACKET_TIME_DELAY;
-
     mover->UpdateMovementInfo(movementInfo);
-
-    mover->UpdatePosition(movementInfo.pos);
     mover->SetSpeedRateReal(move_type, newSpeedRate);
     MovementPacketSender::SendSpeedChangeToObservers(mover, move_type);
 }
