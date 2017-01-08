@@ -601,7 +601,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
     movementInfo.guid = guid;
     recvData >> movementCounter;
     movementInfo.FillContentFromPacket(&recvData, false);
-    TC_LOG_ERROR("custom", "PRE-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementInfo.guid, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
+    TC_LOG_ERROR("custom", "PRE-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementCounter, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
 
     // now can skip not our packet
     if (mover->GetGUID() != movementInfo.guid) // @todo: potential hack attempt. use disciplinary measure?
@@ -623,6 +623,9 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
         || std::fabs(pendingChange.knockbackInfo.vcos - movementInfo.jump.cosAngle) > 0.01f
         || std::fabs(pendingChange.knockbackInfo.vsin - movementInfo.jump.sinAngle) > 0.01f)
     {
+        TC_LOG_ERROR("custom", "RECEIVED: movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementCounter, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
+        TC_LOG_ERROR("custom", "SENT: movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", pendingChange.movementCounter, pendingChange.knockbackInfo.vcos, pendingChange.knockbackInfo.vsin, pendingChange.knockbackInfo.speedXY, pendingChange.knockbackInfo.speedZ);
+
         TC_LOG_INFO("cheat", "WorldSession::HandleMoveKnockBackAck: Player %s from account id %u kicked for incorrect data returned in an ack",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
         _player->GetSession()->KickPlayer();
@@ -630,7 +633,7 @@ void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
     }
 
     /* the client data has been verified. let's do the actual change now */
-    TC_LOG_ERROR("custom", "POST-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementInfo.guid, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
+    TC_LOG_ERROR("custom", "POST-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementCounter, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
     mover->UpdateMovementInfo(movementInfo);
     MovementPacketSender::SendKnockBackToObservers(mover, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
 }
