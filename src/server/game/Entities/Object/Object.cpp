@@ -2662,7 +2662,7 @@ MovementInfo WorldObject::GetMovementInfo() const
     mInfo.guid = GetGUID();
     mInfo.SetMovementFlags(GetUnitMovementFlags());
     mInfo.SetExtraMovementFlags(GetExtraUnitMovementFlags());
-    mInfo.time = uint32(getMSTime()); // @todo: one (or more) field should be created for this! lastPositionUpdateByPlayer & lastPositionUpdateByServer or just lastPositionUpdate + lastPositionUpdateByPlayer on the side.
+    mInfo.time = m_movementInfo.time; // @todo: one (or more) field should be created for this! lastPositionUpdateByPlayer & lastPositionUpdateByServer or just lastPositionUpdate + lastPositionUpdateByPlayer on the side.
     mInfo.pos.Relocate
         (
         GetPositionX(), 

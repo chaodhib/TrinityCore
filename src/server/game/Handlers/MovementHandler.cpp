@@ -367,7 +367,7 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
     mover->UpdateMovementInfo(movementInfo);
 
     WorldPacket data(opcode, recvData.size());
-    movementInfo.WriteContentIntoPacket(&data, true);
+    mover->GetMovementInfo().WriteContentIntoPacket(&data, true);
     mover->SendMessageToSet(&data, _player);
 
     // Some vehicles allow the passenger to turn by himself
