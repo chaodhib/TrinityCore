@@ -203,8 +203,8 @@ void MovementPacketSender::SendKnockBackToObservers(Unit* unit, float vcos, floa
 
     WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
     unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
-    data << vsin;
     data << vcos;
+    data << vsin;
     data << speedXY;
     data << speedZ;
     unit->SendMessageToSet(&data, mover);
