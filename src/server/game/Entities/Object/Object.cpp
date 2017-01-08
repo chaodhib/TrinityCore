@@ -1038,8 +1038,8 @@ void MovementInfo::WriteContentIntoPacket(ByteBuffer * data, bool includeGuid /*
     if (HasMovementFlag(MOVEMENTFLAG_FALLING))
     {
         *data << jump.zspeed;
-        *data << jump.sinAngle;
         *data << jump.cosAngle;
+        *data << jump.sinAngle;
         *data << jump.xyspeed;
     }
 
