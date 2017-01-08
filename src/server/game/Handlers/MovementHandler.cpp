@@ -506,7 +506,7 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     TC_LOG_ERROR("custom", "POST-VALIDATION received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
     mover->UpdateMovementInfo(movementInfo);
     mover->SetSpeedRateReal(move_type, newSpeedRate);
-    MovementPacketSender::SendSpeedChangeToObservers(mover, move_type, newSpeedRate);
+    MovementPacketSender::SendSpeedChangeToObservers(mover, move_type, speedSent);
 }
 
 void WorldSession::HandleCollisionHeightChangeAck(WorldPacket &recvData)
