@@ -9150,7 +9150,7 @@ void Unit::SetSpeedRate(UnitMoveType mtype, float rate)
     else
     {
         SetSpeedRateReal(mtype, rate);
-        MovementPacketSender::SendSpeedChangeToAll(this, mtype);
+        MovementPacketSender::SendSpeedChangeToAll(this, mtype, rate);
     }
 }
 
@@ -12744,29 +12744,19 @@ void Unit::UpdateObjectVisibility(bool forced)
 
 void Unit::KnockbackFrom(float x, float y, float speedXY, float speedZ)
 {
-    Player* player = ToPlayer();
-    if (!player)
-    {
-        if (Unit* charmer = GetCharmer())
-        {
-            player = charmer->ToPlayer();
-            if (player && player->m_unitMovedByMe != this)
-                player = NULL;
-        }
-    }
-
-    if (!player)
-    {
-        GetMotionMaster()->MoveKnockbackFrom(x, y, speedXY, speedZ);
-    }
-    else
+    if (IsMovedByPlayer())
     {
         float vcos, vsin;
         GetSinCos(x, y, vsin, vcos);
-        MovementPacketSender::SendKnockBackToMover(player, vsin, vsin, speedXY, speedZ);
+        TC_LOG_ERROR("custom", "Unit::KnockbackFrom called");
+        MovementPacketSender::SendKnockBackToMover(this, vsin, vsin, speedXY, -speedZ); // !! notice the - sign in front of speedZ !!
 
-        if (player->HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) || player->HasAuraType(SPELL_AURA_FLY))
-            player->SetCanFly(true, true);
+        if (HasAuraType(SPELL_AURA_MOD_INCREASE_MOUNTED_FLIGHT_SPEED) || HasAuraType(SPELL_AURA_FLY))
+            SetCanFly(true, true);
+    }
+    else
+    {
+        GetMotionMaster()->MoveKnockbackFrom(x, y, speedXY, speedZ);
     }
 }
 
@@ -13074,14 +13064,17 @@ uint32 Unit::GetModelForTotem(PlayerTotemType totemType)
 void Unit::JumpTo(float speedXY, float speedZ, bool forward)
 {
     float angle = forward ? 0 : float(M_PI);
-    if (GetTypeId() == TYPEID_UNIT)
-        GetMotionMaster()->MoveJumpTo(angle, speedXY, speedZ);
+    if (IsMovedByPlayer())
+    {
+        float vcos = std::cos(angle + GetOrientation());
+        float vsin = std::sin(angle + GetOrientation());
+
+        TC_LOG_ERROR("custom", "Unit::JumpTo called");
+        MovementPacketSender::SendKnockBackToMover(this, vcos, vsin, speedXY, -speedZ); // !! notice the - sign in front of speedZ !!
+    }
     else
     {
-        float vcos = std::cos(angle+GetOrientation());
-        float vsin = std::sin(angle+GetOrientation());
-
-        MovementPacketSender::SendKnockBackToMover(ToPlayer(), vcos, vsin, speedXY, speedZ);
+        GetMotionMaster()->MoveJumpTo(angle, speedXY, speedZ);
     }
 }
 
@@ -13496,7 +13489,7 @@ PlayerMovementPendingChange Unit::PopPendingMovementChange()
 
 void Unit::PushPendingMovementChange(PlayerMovementPendingChange newChange)
 {
-    TC_LOG_ERROR("custom", "pushed new pending change. queue size before: %u type: %d. new value: %f", pendingMovementChanges.size(), newChange.movementChangeType, newChange.newValue);
+    TC_LOG_ERROR("custom", "pushed new pending change. queue size before: %u type: %d. movementCounter %u", pendingMovementChanges.size(), newChange.movementChangeType, newChange.movementCounter);
     pendingMovementChanges.push(newChange);
 }
 

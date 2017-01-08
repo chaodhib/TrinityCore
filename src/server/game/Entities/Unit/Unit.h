@@ -611,7 +611,8 @@ enum MovementChangeType
     RATE_CHANGE_PITCH,
 
     SET_COLLISION_HGT,
-    TELEPORT
+    TELEPORT,
+    KNOCK_BACK
 };
 
 struct PlayerMovementPendingChange
@@ -622,6 +623,13 @@ struct PlayerMovementPendingChange
     float newValue; // used if speed or height change
     bool apply; // used if movement flag change
     Position pos; // used if teleport
+    struct KnockbackInfo
+    {
+        float vcos; 
+        float vsin; 
+        float speedXY;
+        float speedZ;
+    } knockbackInfo; // used if knockback
 };
 
 enum WeaponAttackType : uint8

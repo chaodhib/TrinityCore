@@ -493,7 +493,7 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
             return;
     }
 
-    if (std::fabs(speedSent - speedReceived) > 0.01f || moveTypeSent!= move_type)
+    if (pendingChange.movementCounter != movementCounter || std::fabs(speedSent - speedReceived) > 0.01f || moveTypeSent!= move_type)
     {
         TC_LOG_INFO("cheat", "WorldSession::HandleForceSpeedChangeAck: Player %s from account id %u kicked for incorrect data returned in an ack",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
@@ -506,7 +506,7 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     TC_LOG_ERROR("custom", "POST-VALIDATION received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
     mover->UpdateMovementInfo(movementInfo);
     mover->SetSpeedRateReal(move_type, newSpeedRate);
-    MovementPacketSender::SendSpeedChangeToObservers(mover, move_type);
+    MovementPacketSender::SendSpeedChangeToObservers(mover, move_type, newSpeedRate);
 }
 
 void WorldSession::HandleCollisionHeightChangeAck(WorldPacket &recvData)
@@ -544,7 +544,7 @@ void WorldSession::HandleCollisionHeightChangeAck(WorldPacket &recvData)
     float heightSent = pendingChange.newValue;
     MovementChangeType changeType = pendingChange.movementChangeType;
 
-    if (changeType != SET_COLLISION_HGT || std::fabs(heightSent - heightReceived) > 0.01f)
+    if (pendingChange.movementCounter != movementCounter || changeType != SET_COLLISION_HGT || std::fabs(heightSent - heightReceived) > 0.01f)
     {
         TC_LOG_INFO("cheat", "WorldSession::HandleCollisionHeightChangeAck: Player %s from account id %u kicked for incorrect data returned in an ack",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
@@ -589,22 +589,50 @@ void WorldSession::HandleMountSpecialAnimOpcode(WorldPacket& /*recvData*/)
 
 void WorldSession::HandleMoveKnockBackAck(WorldPacket& recvData)
 {
-    TC_LOG_DEBUG("network", "CMSG_MOVE_KNOCK_BACK_ACK");
+    Unit* mover = _player->GetUnitBeingMoved();
+    ASSERT(mover);
 
+    /* extract packet */
     ObjectGuid guid;
-    recvData >> guid.ReadAsPacked();
+    uint32 movementCounter;
+    MovementInfo movementInfo;
 
-    if (_player->m_unitMovedByMe->GetGUID() != guid)
+    recvData >> guid.ReadAsPacked();
+    movementInfo.guid = guid;
+    recvData >> movementCounter;
+    movementInfo.FillContentFromPacket(&recvData, false);
+    TC_LOG_ERROR("custom", "PRE-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementInfo.guid, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
+
+    // now can skip not our packet
+    if (mover->GetGUID() != movementInfo.guid) // @todo: potential hack attempt. use disciplinary measure?
         return;
 
-    recvData.read_skip<uint32>();                          // unk
+    // verify that indeed the client is replying with the changes that were send to him
+    if (!mover->HasPendingMovementChange())
+    {
+        TC_LOG_INFO("cheat", "WorldSession::HandleMoveKnockBackAck: Player %s from account id %u kicked because no movement change ack was expected from this player",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+        _player->GetSession()->KickPlayer();
+        return;
+    }
 
-    MovementInfo movementInfo;
-    movementInfo.FillContentFromPacket(&recvData);
+    PlayerMovementPendingChange pendingChange = mover->PopPendingMovementChange();
+    if (pendingChange.movementCounter != movementCounter || pendingChange.movementChangeType != KNOCK_BACK
+        || std::fabs(pendingChange.knockbackInfo.speedXY - movementInfo.jump.xyspeed) > 0.01f
+        || std::fabs(pendingChange.knockbackInfo.speedZ - movementInfo.jump.zspeed) > 0.01f
+        || std::fabs(pendingChange.knockbackInfo.vcos - movementInfo.jump.cosAngle) > 0.01f
+        || std::fabs(pendingChange.knockbackInfo.vsin - movementInfo.jump.sinAngle) > 0.01f)
+    {
+        TC_LOG_INFO("cheat", "WorldSession::HandleMoveKnockBackAck: Player %s from account id %u kicked for incorrect data returned in an ack",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+        _player->GetSession()->KickPlayer();
+        return;
+    }
 
-    _player->m_movementInfo = movementInfo;
-
-    MovementPacketSender::SendKnockBackToObservers(_player);
+    /* the client data has been verified. let's do the actual change now */
+    TC_LOG_ERROR("custom", "POST-VALIDATION received knockback ack. movement counter: %u. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", movementInfo.guid, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
+    mover->UpdateMovementInfo(movementInfo);
+    MovementPacketSender::SendKnockBackToObservers(mover, movementInfo.jump.cosAngle, movementInfo.jump.sinAngle, movementInfo.jump.xyspeed, movementInfo.jump.zspeed);
 }
 
 void WorldSession::HandleMoveHoverAck(WorldPacket& recvData)

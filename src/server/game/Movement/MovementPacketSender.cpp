@@ -106,6 +106,7 @@ void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype
     float newSpeedFlat = newRate * (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[mtype] : baseMoveSpeed[mtype]); // this line is a fucking mess. what if the unit is a creature MCed by a player? this whole speed rate thing needs to die. In the meantime: use mover or unit ?
     uint32 mCounter = unit->GetMovementCounterAndInc();
     PlayerMovementPendingChange pendingChange;
+    pendingChange.movementCounter = mCounter;
     pendingChange.newValue = newSpeedFlat;
     switch (mtype)
     {
@@ -134,7 +135,7 @@ void MovementPacketSender::SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype
     mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype, float newRate)
 {
     Player* mover = unit->GetPlayerMovingMe();
     if (!mover)
@@ -146,42 +147,67 @@ void MovementPacketSender::SendSpeedChangeToObservers(Unit* unit, UnitMoveType m
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][2], 8 + 30 + 4);
     unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
-    data << unit->GetSpeed(mtype);
+    data << newRate;
     unit->SendMessageToSet(&data, mover);
 }
 
-void MovementPacketSender::SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype)
+void MovementPacketSender::SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype, float newRate)
 {
     WorldPacket data;
     data.Initialize(moveTypeToOpcode[mtype][0], 8 + 4);
     data << unit->GetPackGUID();
-    data << unit->GetSpeed(mtype);
+    data << newRate;
     unit->SendMessageToSet(&data, true);
 }
 
-void MovementPacketSender::SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ)
+void MovementPacketSender::SendKnockBackToMover(Unit* unit, float vcos, float vsin, float speedXY, float speedZ)
 {
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendKnockBackToMover: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
+    uint32 mCounter = unit->GetMovementCounterAndInc();
+    PlayerMovementPendingChange pendingChange;
+    pendingChange.movementCounter = mCounter;
+    pendingChange.movementChangeType = KNOCK_BACK;
+    pendingChange.knockbackInfo.vcos = vcos;
+    pendingChange.knockbackInfo.vsin = vsin;
+    pendingChange.knockbackInfo.speedXY = speedXY;
+    pendingChange.knockbackInfo.speedZ = speedZ;
+
+    unit->PushPendingMovementChange(pendingChange);
+
+    TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendKnockBackToMover called. vcos: %f, vsin: %f, speedXY: %f, speedZ: %f", vcos, vsin, speedXY, speedZ);
+
     WorldPacket data(SMSG_MOVE_KNOCK_BACK, (8 + 4 + 4 + 4 + 4 + 4));
-    data << player->GetPackGUID();
-    data << player->GetMovementCounterAndInc();
+    data << unit->GetPackGUID();
+    data << mCounter;
     data << float(vcos);                                    // x direction
     data << float(vsin);                                    // y direction
     data << float(speedXY);                                 // Horizontal speed
-    data << float(-speedZ);                                 // Z Movement speed (vertical)
-
-    player->GetSession()->SendPacket(&data);
+    data << float(speedZ);                                 // Z Movement speed (vertical)
+    mover->GetSession()->SendPacket(&data);
 }
 
-void MovementPacketSender::SendKnockBackToObservers(Player* player)
+void MovementPacketSender::SendKnockBackToObservers(Unit* unit, float vcos, float vsin, float speedXY, float speedZ)
 {
-    WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
-    player->GetMovementInfo().WriteContentIntoPacket(&data, true);
-    data << player->GetMovementInfo().jump.sinAngle;
-    data << player->GetMovementInfo().jump.cosAngle;
-    data << player->GetMovementInfo().jump.xyspeed;
-    data << player->GetMovementInfo().jump.zspeed;
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendSpeedChangeToObservers: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
 
-    player->SendMessageToSet(&data, false);
+    WorldPacket data(MSG_MOVE_KNOCK_BACK, 66);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
+    data << vsin;
+    data << vcos;
+    data << speedXY;
+    data << speedZ;
+    unit->SendMessageToSet(&data, mover);
 }
 
 void MovementPacketSender::SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply)

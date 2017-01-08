@@ -51,7 +51,7 @@ class Player;
 //
 //    ----------------------
 //    Speed changes on player controlled units:
-//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
+//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers
 //        { SMSG_FORCE_WALK_SPEED_CHANGE,                       CMSG_FORCE_WALK_SPEED_CHANGE_ACK,                           MSG_MOVE_SET_WALK_SPEED },
 //        { SMSG_FORCE_RUN_SPEED_CHANGE,                        CMSG_FORCE_RUN_SPEED_CHANGE_ACK,                            MSG_MOVE_SET_RUN_SPEED },
 //        { SMSG_FORCE_RUN_BACK_SPEED_CHANGE,                   CMSG_FORCE_RUN_BACK_SPEED_CHANGE_ACK,                       MSG_MOVE_SET_RUN_BACK_SPEED },
@@ -64,9 +64,10 @@ class Player;
 //
 //    ----------------------
 //    Other type of changes
-//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers  @todo= confirmed that all of them are only sent by server
+//        // Step1 Sent by the server to the mover's client     // Step2 Sent back by the mover's client to the server      // Step3 Sent to observers
 //        { SMSG_MOVE_SET_COLLISION_HGT,                        CMSG_MOVE_SET_COLLISION_HGT_ACK,                            MSG_MOVE_SET_COLLISION_HGT },
 //        { MSG_MOVE_TELEPORT_ACK,                              MSG_MOVE_TELEPORT_ACK,                                      MSG_MOVE_TELEPORT },
+//        { SMSG_MOVE_KNOCK_BACK,                               CMSG_MOVE_KNOCK_BACK_ACK,                                   MSG_MOVE_KNOCK_BACK },
 //
 //    ----------------------
 //    movement flag changes for server controlled units:
@@ -106,15 +107,14 @@ class MovementPacketSender
         static void SendTeleportPacket(Unit* unit); // rename to SendTeleportToobservers?
 
         /* speed change */
-        // 
         static void SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate);
-        static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype);
-        static void SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype);
+        static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype, float newRate);
+        static void SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype, float newRate);
 
         /* knocback */
-        static void SendKnockBackToMover(Player* player, float vcos, float vsin, float speedXY, float speedZ);
-        static void SendKnockBackToObservers(Player* player);
-        // static void SendKnockBackToAll(); // @todo
+        static void SendKnockBackToMover(Unit* unit, float vcos, float vsin, float speedXY, float speedZ);
+        static void SendKnockBackToObservers(Unit* unit, float vcos, float vsin, float speedXY, float speedZ);
+        // static void SendKnockBackToAll(); // remove this? apparently, the equivalent of this for server controlled unit is a spline with a parabolic component
 
         /* movement flag change */
     public:
