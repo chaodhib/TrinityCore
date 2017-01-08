@@ -13849,11 +13849,11 @@ bool Unit::SetCollisionHeight(float newValue)
 
     if (IsMovedByPlayer())
         MovementPacketSender::SendHeightChangeToMover(this, newValue);
-    //else
-    //{
-    //    MovementPacketSender::SendHeightChangeToAll(this, newValue);
-    //    SetCollisionHeightReal(newValue);
-    //}
+    else
+    {
+        // no need to send this information to the clients since it only affects pathfinding, which is server side only.
+        SetCollisionHeightReal(newValue);
+    }
 
     return true; // change method return type to void?
 }
