@@ -21,7 +21,7 @@
 #include "WorldPacket.h"
 #include "WorldSession.h"
 
-void MovementPacketSender::SendHeightChangeToMover(Unit* unit, float newRate)
+void MovementPacketSender::SendHeightChangeToMover(Unit* unit, float newHeight)
 {
     Player* mover = unit->GetPlayerMovingMe();
     if (!mover)
@@ -30,11 +30,38 @@ void MovementPacketSender::SendHeightChangeToMover(Unit* unit, float newRate)
         return;
     }
 
+    uint32 mCounter = unit->GetMovementCounterAndInc();
+    PlayerMovementPendingChange pendingChange;
+    pendingChange.movementCounter = mCounter;
+    pendingChange.movementChangeType = SET_COLLISION_HGT;
+    pendingChange.newValue = newHeight;
+
+    unit->PushPendingMovementChange(pendingChange);
+
+    TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendHeightChangeToMover called. new height: %f", newHeight);
+
     WorldPacket data(SMSG_MOVE_SET_COLLISION_HGT, unit->GetPackGUID().size() + 4 + 4);
     data << unit->GetPackGUID();
-    data << unit->GetMovementCounterAndInc();
-    data << newRate;
+    data << mCounter;
+    data << newHeight;
     mover->GetSession()->SendPacket(&data);
+}
+
+void MovementPacketSender::SendHeightChangeToObservers(Unit* unit, float newHeight)
+{
+    Player* mover = unit->GetPlayerMovingMe();
+    if (!mover)
+    {
+        TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendHeightChangeToObservers: Incorrect use of the function. It was called on a unit controlled by the server!");
+        return;
+    }
+
+    TC_LOG_ERROR("entities.unit", "MovementPacketSender::SendHeightChangeToObservers called. new height: %f", newHeight);
+
+    WorldPacket data(MSG_MOVE_SET_COLLISION_HGT, 8 + 30 + 4);
+    unit->GetMovementInfo().WriteContentIntoPacket(&data, true);
+    data << newHeight;
+    unit->SendMessageToSet(&data, mover);
 }
 
 void MovementPacketSender::SendTeleportAckPacket(Player* player)

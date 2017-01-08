@@ -2263,7 +2263,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool CanFly() const override { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_CAN_FLY); }
 
         //! Return collision height sent to client
-        float GetCollisionHeight(bool mounted) const;
+        float ComputeCollisionHeight(bool mounted) const;
 
         std::string GetMapAreaAndZoneString() const;
         std::string GetCoordsMapAreaAndZoneString() const;

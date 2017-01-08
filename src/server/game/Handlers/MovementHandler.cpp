@@ -460,12 +460,12 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
     movementInfo.FillContentFromPacket(&recvData);
     recvData >> speedReceived;
 
-    TC_LOG_ERROR("custom", "received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
+    TC_LOG_ERROR("custom", "PRE-VALIDATION received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
 
     // verify that indeed the client is replying with the changes that were send to him
     if (!mover->HasPendingMovementChange())
     {
-        TC_LOG_INFO("cheat", "Player %s from account id %u kicked because no movement change ack was expected from this player",
+        TC_LOG_INFO("cheat", "WorldSession::HandleForceSpeedChangeAck: Player %s from account id %u kicked because no movement change ack was expected from this player",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
         _player->GetSession()->KickPlayer();
         return;
@@ -487,13 +487,15 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
         case SPEED_CHANGE_FLIGHT_BACK_SPEED:    moveTypeSent = MOVE_FLIGHT_BACK; break;
         case RATE_CHANGE_PITCH:                 moveTypeSent = MOVE_PITCH_RATE; break;
         default:
-            TC_LOG_ERROR("network", "WorldSession::HandleForceSpeedChangeAck: Unsupported MovementChangeType (%d)", changeType);
+            TC_LOG_INFO("cheat", "WorldSession::HandleForceSpeedChangeAck: Player %s from account id %u kicked for incorrect data returned in an ack",
+                _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+            _player->GetSession()->KickPlayer();
             return;
     }
 
     if (std::fabs(speedSent - speedReceived) > 0.01f || moveTypeSent!= move_type)
     {
-        TC_LOG_INFO("cheat", "Player %s from account id %u kicked for incorrect data returned in an ack",
+        TC_LOG_INFO("cheat", "WorldSession::HandleForceSpeedChangeAck: Player %s from account id %u kicked for incorrect data returned in an ack",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
         _player->GetSession()->KickPlayer();
         return;
@@ -501,11 +503,60 @@ void WorldSession::HandleForceSpeedChangeAck(WorldPacket &recvData)
 
     /* the client data has been verified. let's do the actual change now */
     float newSpeedRate = speedSent / (mover->IsControlledByPlayer() ? playerBaseMoveSpeed[move_type] : baseMoveSpeed[move_type]); // is it sure that IsControlledByPlayer() should be used?
-    TC_LOG_ERROR("custom", "received change of speed ack. new speed rate: %f", newSpeedRate);
-
+    TC_LOG_ERROR("custom", "POST-VALIDATION received speed ack. movement counter: %u. new speed rate: %f", movementCounter, speedReceived);
     mover->UpdateMovementInfo(movementInfo);
     mover->SetSpeedRateReal(move_type, newSpeedRate);
     MovementPacketSender::SendSpeedChangeToObservers(mover, move_type);
+}
+
+void WorldSession::HandleCollisionHeightChangeAck(WorldPacket &recvData)
+{
+    Unit* mover = _player->GetUnitBeingMoved();
+    ASSERT(mover);
+
+    /* extract packet */
+    ObjectGuid guid;
+    uint32 movementCounter;
+    MovementInfo movementInfo;
+    float  heightReceived;
+
+    recvData >> guid.ReadAsPacked();
+    movementInfo.guid = guid;
+    recvData >> movementCounter;
+    movementInfo.FillContentFromPacket(&recvData, false);
+    recvData >> heightReceived;
+    TC_LOG_ERROR("custom", "PRE-VALIDATION received height ack. movement counter: %u. new speed rate: %f", movementCounter, heightReceived);
+
+    // now can skip not our packet
+    if (mover->GetGUID() != movementInfo.guid) // @todo: potential hack attempt. use disciplinary measure?
+        return;
+
+    // verify that indeed the client is replying with the changes that were send to him
+    if (!mover->HasPendingMovementChange())
+    {
+        TC_LOG_INFO("cheat", "WorldSession::HandleCollisionHeightChangeAck: Player %s from account id %u kicked because no movement change ack was expected from this player",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+        _player->GetSession()->KickPlayer();
+        return;
+    }
+
+    PlayerMovementPendingChange pendingChange = mover->PopPendingMovementChange();
+    float heightSent = pendingChange.newValue;
+    MovementChangeType changeType = pendingChange.movementChangeType;
+
+    if (changeType != SET_COLLISION_HGT || std::fabs(heightSent - heightReceived) > 0.01f)
+    {
+        TC_LOG_INFO("cheat", "WorldSession::HandleCollisionHeightChangeAck: Player %s from account id %u kicked for incorrect data returned in an ack",
+            _player->GetName().c_str(), _player->GetSession()->GetAccountId());
+        _player->GetSession()->KickPlayer();
+        return;
+    }
+
+    /* the client data has been verified. let's do the actual change now */
+    TC_LOG_ERROR("custom", "POST-VALIDATION received height ack. movement counter: %u. new speed rate: %f", movementCounter, heightReceived);
+    mover->UpdateMovementInfo(movementInfo);
+    mover->SetCollisionHeightReal(heightSent);
+    MovementPacketSender::SendHeightChangeToObservers(mover, heightSent);
 }
 
 void WorldSession::HandleSetActiveMoverOpcode(WorldPacket &recvData)

@@ -1681,6 +1681,9 @@ class TC_GAME_API Unit : public WorldObject
         virtual bool SetWaterWalking(bool enable, bool packetOnly = false);
         virtual bool SetFeatherFall(bool enable, bool packetOnly = false);
         virtual bool SetHover(bool enable, bool packetOnly = false);
+        bool SetCollisionHeight(float newValue);
+        void SetCollisionHeightReal(float newValue) { collisionHeight = newValue; }
+        float GetCollisionHeight() const { return collisionHeight; }
 
         void SetInFront(WorldObject const* target);
         void SetFacingTo(float ori, bool force = false);
@@ -2315,6 +2318,7 @@ class TC_GAME_API Unit : public WorldObject
         VisibleAuraMap m_visibleAuras;
 
         float m_speed_rate[MAX_MOVE_TYPE];
+        float collisionHeight; // @todo: initialize this value using dbc data at unit creation
 
         CharmInfo* m_charmInfo;
         SharedVisionList m_sharedVision;

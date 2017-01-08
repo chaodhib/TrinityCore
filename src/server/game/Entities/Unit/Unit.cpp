@@ -8382,7 +8382,8 @@ void Unit::Mount(uint32 mount, uint32 VehicleId, uint32 creatureEntry)
             if (charm->GetTypeId() == TYPEID_UNIT)
                 charm->SetFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_STUNNED);
 
- 		MovementPacketSender::SendHeightChangeToMover(player, true);
+ 		float newCollisionHeight = player->ComputeCollisionHeight(true);
+        SetCollisionHeight(newCollisionHeight);
     }
 
     RemoveAurasWithInterruptFlags(AURA_INTERRUPT_FLAG_MOUNT);
@@ -8397,7 +8398,10 @@ void Unit::Dismount()
     RemoveFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_MOUNT);
 
     if (Player* thisPlayer = ToPlayer())
-        MovementPacketSender::SendHeightChangeToMover(thisPlayer, false);
+    {
+        float newCollisionHeight = thisPlayer->ComputeCollisionHeight(false);
+        SetCollisionHeight(newCollisionHeight);
+    }
 
     WorldPacket data(SMSG_DISMOUNT, 8);
     data << GetPackGUID();
@@ -13842,6 +13846,23 @@ bool Unit::SetHover(bool enable, bool /*packetOnly = false*/)
         }
     }
     return true;
+}
+
+bool Unit::SetCollisionHeight(float newValue)
+{
+    // Update only on change
+    if (GetCollisionHeight() == newValue)
+        return false;
+
+    if (IsMovedByPlayer())
+        MovementPacketSender::SendHeightChangeToMover(this, newValue);
+    //else
+    //{
+    //    MovementPacketSender::SendHeightChangeToAll(this, newValue);
+    //    SetCollisionHeightReal(newValue);
+    //}
+
+    return true; // change method return type to void?
 }
 
 void Unit::BuildValuesUpdate(uint8 updateType, ByteBuffer* data, Player* target) const

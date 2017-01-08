@@ -87,23 +87,28 @@ class Player;
 //        SMSG_SPLINE_MOVE_UNSET_HOVER,
 //    }
 
+/*
+xxxxxToMover() and xxxxxToObservers() methods should be only used on a unit controlled & moved by a player (as in direct client control: possess, vehicule,..).
+ToMover() to send a packet to the client (asking for confirmation before acting the change) and ToObservers once the change has been acted and should be broadcasted to the other players around (the observers).
+
+xxxxxToAll() method should be used on a unit controlled & moved by the server (@todo note to self: does a player moved unit under the control of a temporary disorient (Scatter Shot eg) or fear fall into this category? EDIT: by looking at the effects of Psychic Scream (10890), the answer is yes)
+*/
 class MovementPacketSender
 {
     public:
         /* height change */
         static void SendHeightChangeToMover(Unit* unit, float newRate);
-        // static void SendHeightChangeToObservers();
-        // static void SendHeightChangeToAll();
+        static void SendHeightChangeToObservers(Unit* unit, float newRate);
+        //static void SendHeightChangeToAll(Unit* unit, float newRate); // does this change exist for units controlled by the server?
 
         /* teleport */
         static void SendTeleportAckPacket(Player* player); // rename to SendTeleportToMover?
         static void SendTeleportPacket(Unit* unit); // rename to SendTeleportToobservers?
 
         /* speed change */
-        // Only use this method if the moving unit is controlled/moved by a player
+        // 
         static void SendSpeedChangeToMover(Unit* unit, UnitMoveType mtype, float newRate);
         static void SendSpeedChangeToObservers(Unit* unit, UnitMoveType mtype);
-        // Only use this method if the moving unit is controlled/moved by the server
         static void SendSpeedChangeToAll(Unit* unit, UnitMoveType mtype);
 
         /* knocback */
@@ -124,13 +129,11 @@ class MovementPacketSender
         static void SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply);
 
     private:
-        // the follow 4 methods are to be used on a unit controlled & moved by a player (as in direct client control: possess, vehicule,..)
         static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply);
         static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags2 mFlag, bool apply);
         static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags mFlag);
         static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags2 mFlag);
 
-        // to be used on a unit controlled & moved by the server
         static void SendMovementFlagChangeToAll(Unit* unit, MovementFlags mFlag, bool apply);
 
     private:

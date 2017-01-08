@@ -26277,17 +26277,17 @@ bool Player::SetFeatherFall(bool apply, bool packetOnly /*= false*/)
     return true;
 }
 
-float Player::GetCollisionHeight(bool mounted) const
+float Player::ComputeCollisionHeight(bool mounted) const
 {
     if (mounted)
     {
         CreatureDisplayInfoEntry const* mountDisplayInfo = sCreatureDisplayInfoStore.LookupEntry(GetUInt32Value(UNIT_FIELD_MOUNTDISPLAYID));
         if (!mountDisplayInfo)
-            return GetCollisionHeight(false);
+            return ComputeCollisionHeight(false);
 
         CreatureModelDataEntry const* mountModelData = sCreatureModelDataStore.LookupEntry(mountDisplayInfo->ModelId);
         if (!mountModelData)
-            return GetCollisionHeight(false);
+            return ComputeCollisionHeight(false);
 
         CreatureDisplayInfoEntry const* displayInfo = sCreatureDisplayInfoStore.LookupEntry(GetNativeDisplayId());
         ASSERT(displayInfo);
