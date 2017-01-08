@@ -100,7 +100,6 @@ class MovementPacketSender
         /* height change */
         static void SendHeightChangeToMover(Unit* unit, float newRate);
         static void SendHeightChangeToObservers(Unit* unit, float newRate);
-        //static void SendHeightChangeToAll(Unit* unit, float newRate); // does this change exist for units controlled by the server?
 
         /* teleport */
         static void SendTeleportAckPacket(Player* player); // rename to SendTeleportToMover?
@@ -114,7 +113,6 @@ class MovementPacketSender
         /* knocback */
         static void SendKnockBackToMover(Unit* unit, float vcos, float vsin, float speedXY, float speedZ);
         static void SendKnockBackToObservers(Unit* unit, float vcos, float vsin, float speedXY, float speedZ);
-        // static void SendKnockBackToAll(); // remove this? apparently, the equivalent of this for server controlled unit is a spline with a parabolic component
 
         /* movement flag change */
     public:
