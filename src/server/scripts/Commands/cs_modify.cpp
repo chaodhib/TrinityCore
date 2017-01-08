@@ -25,7 +25,6 @@ EndScriptData */
 #include "Chat.h"
 #include "ObjectMgr.h"
 #include "Opcodes.h"
-#include "MovementPacketSender.h"
 #include "Pet.h"
 #include "Player.h"
 #include "ReputationMgr.h"

@@ -30,7 +30,6 @@ EndScriptData */
 #include "World.h"
 #include "Player.h"
 #include "Opcodes.h"
-#include "MovementPacketSender.h"
 
 class gm_commandscript : public CommandScript
 {
