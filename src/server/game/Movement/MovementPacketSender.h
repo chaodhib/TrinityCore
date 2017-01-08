@@ -70,7 +70,7 @@ class Player;
 //        { SMSG_MOVE_KNOCK_BACK,                               CMSG_MOVE_KNOCK_BACK_ACK,                                   MSG_MOVE_KNOCK_BACK },
 //
 //    ----------------------
-//    movement flag changes for server controlled units:
+//    movement flag changes for server controlled units: (these player movement flags have no equivalent in spline: SET_CAN_FLY and SET_CAN_TRANSITION_BETWEEN_SWIM_AND_FLY)
 //    apply
 //    {
 //        SMSG_SPLINE_MOVE_GRAVITY_DISABLE,
