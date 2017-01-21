@@ -2624,20 +2624,6 @@ bool Creature::SetWalk(bool enable)
     return true;
 }
 
-bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
-{
-    //! It's possible only a packet is sent but moveflags are not updated
-    //! Need more research on this
-    if (!packetOnly && !Unit::SetDisableGravity(disable))
-        return false;
-
-    if (!movespline->Initialized())
-        return true;
-
-    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_DISABLE_GRAVITY, disable);
-    return true;
-}
-
 bool Creature::SetSwim(bool enable)
 {
     if (!Unit::SetSwim(enable))
@@ -2687,25 +2673,6 @@ bool Creature::SetFeatherFall(bool enable, bool packetOnly /* = false */)
         return true;
 
     MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_FALLING_SLOW, enable);
-    return true;
-}
-
-bool Creature::SetHover(bool enable, bool packetOnly /*= false*/)
-{
-    if (!packetOnly && !Unit::SetHover(enable))
-        return false;
-
-    //! Unconfirmed for players:
-    if (enable)
-        SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
-    else
-        RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
-
-    if (!movespline->Initialized())
-        return true;
-
-    //! Not always a packet is sent
-    MovementPacketSender::SendMovementFlagChange(this, MOVEMENTFLAG_HOVER, enable);
     return true;
 }
 

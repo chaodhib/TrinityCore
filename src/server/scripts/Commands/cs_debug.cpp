@@ -99,6 +99,9 @@ public:
             { "boundary",      rbac::RBAC_PERM_COMMAND_DEBUG_BOUNDARY,      false, &HandleDebugBoundaryCommand,         "" },
             { "raidreset",     rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND,     false, &HandleDebugRaidResetCommand,        "" },
             { "neargraveyard", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugNearGraveyard,           "" },
+            { "gravity", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugGravity,           "" },
+            { "hover", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugHover,           "" },
+            { "sethoverheight", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugSetHoverHeight,           "" },
         };
         static std::vector<ChatCommand> commandTable =
         {
@@ -1310,6 +1313,63 @@ public:
         target->SetUInt32Value(opcode,  value);
 
         handler->PSendSysMessage(LANG_SET_32BIT_FIELD, opcode, value);
+        return true;
+    }
+
+    static bool HandleDebugGravity(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        if (!target)
+            target = handler->GetSession()->GetPlayer();
+
+        std::string argstr = (char*)args;
+
+        bool apply;
+        if (argstr == "off")
+        {
+            apply = false;
+        }
+        else if (argstr == "on")
+        {
+            apply = true;
+        }
+
+        target->SetDisableGravity(apply);
+        return true;
+    }
+
+    static bool HandleDebugHover(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        if (!target)
+            target = handler->GetSession()->GetPlayer();
+
+        std::string argstr = (char*)args;
+
+        bool apply;
+        if (argstr == "off")
+        {
+            apply = false;
+        }
+        else if (argstr == "on")
+        {
+            apply = true;
+        }
+
+        target->SetHover(apply);
+        return true;
+    }
+
+    static bool HandleDebugSetHoverHeight(ChatHandler* handler, char const* args)
+    {
+        Unit* target = handler->getSelectedUnit();
+        if (!target)
+            target = handler->GetSession()->GetPlayer();
+
+        float newHoverHeight = (float)atof((char*)args);
+
+        target->SetFloatValue(UNIT_FIELD_HOVERHEIGHT, newHoverHeight);
+
         return true;
     }
 

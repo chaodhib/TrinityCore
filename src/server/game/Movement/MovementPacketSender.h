@@ -125,8 +125,6 @@ class MovementPacketSender
         */
         static void SendMovementFlagChange(Unit* unit, MovementFlags mFlag, bool apply);
         static void SendMovementFlagChange(Unit* unit, MovementFlags2 mFlag, bool apply);
-
-    private:
         static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags mFlag, bool apply);
         static void SendMovementFlagChangeToMover(Unit* unit, MovementFlags2 mFlag, bool apply);
         static void SendMovementFlagChangeToObservers(Unit* unit, MovementFlags mFlag);

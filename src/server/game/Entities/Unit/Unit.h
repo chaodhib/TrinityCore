@@ -1679,16 +1679,20 @@ class TC_GAME_API Unit : public WorldObject
         //void SendMonsterMove(float NewPosX, float NewPosY, float NewPosZ, uint8 type, uint32 MovementFlags, uint32 Time, Player* player = NULL);
         void SendMovementFlagUpdate(bool self = false);
 
-        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY); }
+
         bool IsWalking() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_WALKING); }
-        bool IsHovering() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_HOVER); }
         virtual bool SetWalk(bool enable);
-        virtual bool SetDisableGravity(bool disable, bool packetOnly = false);
         virtual bool SetSwim(bool enable);
         virtual bool SetCanFly(bool enable, bool packetOnly = false);
         virtual bool SetWaterWalking(bool enable, bool packetOnly = false);
         virtual bool SetFeatherFall(bool enable, bool packetOnly = false);
-        virtual bool SetHover(bool enable, bool packetOnly = false);
+
+        void SetHover(bool apply);
+        bool IsHovering() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_HOVER); }
+
+        void SetDisableGravity(bool apply);
+        bool IsLevitating() const { return m_movementInfo.HasMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY); }
+
         bool SetCollisionHeight(float newValue);
         void SetCollisionHeightReal(float newValue) { collisionHeight = newValue; }
         float GetCollisionHeight() const { return collisionHeight; }

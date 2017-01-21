@@ -13748,21 +13748,6 @@ bool Unit::SetWalk(bool enable)
     return true;
 }
 
-bool Unit::SetDisableGravity(bool disable, bool /*packetOnly = false*/)
-{
-    if (disable == IsLevitating())
-        return false;
-
-    if (disable)
-    {
-        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-        RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
-    }
-    else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-    return true;
-}
-
 bool Unit::SetSwim(bool enable)
 {
     if (enable == HasUnitMovementFlag(MOVEMENTFLAG_SWIMMING))
@@ -13814,31 +13799,70 @@ bool Unit::SetFeatherFall(bool enable, bool /*packetOnly = false */)
     return true;
 }
 
-bool Unit::SetHover(bool enable, bool /*packetOnly = false*/)
+void Unit::SetDisableGravity(bool apply)
 {
-    if (enable == HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        return false;
+    if (apply == HasUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY))
+        return;
+
+    if (apply)
+    {
+        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+    }
+    else
+        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+
+    if (IsMovedByPlayer())
+    {
+        MovementPacketSender::SendMovementFlagChangeToMover(this, MOVEMENTFLAG_DISABLE_GRAVITY, apply);
+    }
+    else
+    {
+        MovementPacketSender::SendMovementFlagChangeToAll(this, MOVEMENTFLAG_DISABLE_GRAVITY, apply);
+    }
+}
+
+void Unit::SetHover(bool apply)
+{
+    if (apply == HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
+        return;
 
     float hoverHeight = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
-
-    if (enable)
+    
+    if (apply)
     {
-        //! No need to check height on ascent
         AddUnitMovementFlag(MOVEMENTFLAG_HOVER);
-        if (hoverHeight)
-            UpdateHeight(GetPositionZ() + hoverHeight);
     }
     else
     {
         RemoveUnitMovementFlag(MOVEMENTFLAG_HOVER);
-        if (hoverHeight)
-        {
-            float newZ = GetPositionZ() - hoverHeight;
-            UpdateAllowedPositionZ(GetPositionX(), GetPositionY(), newZ);
-            UpdateHeight(newZ);
-        }
     }
-    return true;
+
+    if (IsMovedByPlayer())
+    {
+        MovementPacketSender::SendMovementFlagChangeToMover(this, MOVEMENTFLAG_HOVER, apply);
+    }
+    else
+    {
+        MovementPacketSender::SendMovementFlagChangeToAll(this, MOVEMENTFLAG_HOVER, apply);
+    }
+
+    //if (apply)
+    //{
+    //    //! No need to check height on ascent
+    //    AddUnitMovementFlag(MOVEMENTFLAG_HOVER);
+    //    if (hoverHeight)
+    //        UpdateHeight(GetPositionZ() + hoverHeight);
+    //}
+    //else
+    //{
+    //    RemoveUnitMovementFlag(MOVEMENTFLAG_HOVER);
+    //    if (hoverHeight)
+    //    {
+    //        float newZ = GetPositionZ() - hoverHeight;
+    //        UpdateAllowedPositionZ(GetPositionX(), GetPositionY(), newZ);
+    //        UpdateHeight(newZ);
+    //    }
+    //}
 }
 
 bool Unit::SetCollisionHeight(float newValue)
