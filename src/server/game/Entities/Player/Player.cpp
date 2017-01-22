@@ -22966,7 +22966,7 @@ void Player::SendAurasForTarget(Unit* target) const
         target->SetWaterWalking(true, true);
 
     if (target->HasAuraType(SPELL_AURA_HOVER))
-        target->SetHover(true, true);
+        target->SetHover(true);
 
     WorldPacket data(SMSG_AURA_UPDATE_ALL);
     data << target->GetPackGUID();
@@ -26296,23 +26296,6 @@ bool Player::IsInWhisperWhiteList(ObjectGuid guid)
     return false;
 }
 
-bool Player::SetDisableGravity(bool disable, bool packetOnly /*= false*/)
-{
-    if (!packetOnly && !Unit::SetDisableGravity(disable))
-        return false;
-
-    WorldPacket data(disable ? SMSG_MOVE_GRAVITY_DISABLE : SMSG_MOVE_GRAVITY_ENABLE, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
-
-    data.Initialize(MSG_MOVE_GRAVITY_CHNG, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
-    return true;
-}
-
 bool Player::SetCanFly(bool apply, bool packetOnly /*= false*/)
 {
     if (!packetOnly && !Unit::SetCanFly(apply))
@@ -26327,23 +26310,6 @@ bool Player::SetCanFly(bool apply, bool packetOnly /*= false*/)
     SendDirectMessage(&data);
 
     data.Initialize(MSG_MOVE_UPDATE_CAN_FLY, 64);
-    data << GetPackGUID();
-    BuildMovementPacket(&data);
-    SendMessageToSet(&data, false);
-    return true;
-}
-
-bool Player::SetHover(bool apply, bool packetOnly /*= false*/)
-{
-    if (!packetOnly && !Unit::SetHover(apply))
-        return false;
-
-    WorldPacket data(apply ? SMSG_MOVE_SET_HOVER : SMSG_MOVE_UNSET_HOVER, 12);
-    data << GetPackGUID();
-    data << uint32(0);          //! movement counter
-    SendDirectMessage(&data);
-
-    data.Initialize(MSG_MOVE_HOVER, 64);
     data << GetPackGUID();
     BuildMovementPacket(&data);
     SendMessageToSet(&data, false);

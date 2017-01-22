@@ -11915,11 +11915,11 @@ void Unit::Kill(Unit* victim, bool durabilityLoss)
 
 float Unit::GetPositionZMinusOffset() const
 {
-    float offset = 0.0f;
-    if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        offset = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
+    //float offset = 0.0f;
+    //if (HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
+    //    offset = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
 
-    return GetPositionZ() - offset;
+    return GetPositionZ();
 }
 
 void Unit::SetControlled(bool apply, UnitState state)
@@ -13923,21 +13923,6 @@ bool Unit::SetWalk(bool enable)
     return true;
 }
 
-bool Unit::SetDisableGravity(bool disable, bool /*packetOnly = false*/)
-{
-    if (disable == IsLevitating())
-        return false;
-
-    if (disable)
-    {
-        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-        RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
-    }
-    else
-        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
-    return true;
-}
-
 bool Unit::SetSwim(bool enable)
 {
     if (enable == HasUnitMovementFlag(MOVEMENTFLAG_SWIMMING))
@@ -13986,33 +13971,6 @@ bool Unit::SetFeatherFall(bool enable, bool /*packetOnly = false */)
         AddUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
     else
         RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING_SLOW);
-    return true;
-}
-
-bool Unit::SetHover(bool enable, bool /*packetOnly = false*/)
-{
-    if (enable == HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
-        return false;
-
-    float hoverHeight = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
-
-    if (enable)
-    {
-        //! No need to check height on ascent
-        AddUnitMovementFlag(MOVEMENTFLAG_HOVER);
-        if (hoverHeight)
-            UpdateHeight(GetPositionZ() + hoverHeight);
-    }
-    else
-    {
-        RemoveUnitMovementFlag(MOVEMENTFLAG_HOVER);
-        if (hoverHeight)
-        {
-            float newZ = GetPositionZ() - hoverHeight;
-            UpdateAllowedPositionZ(GetPositionX(), GetPositionY(), newZ);
-            UpdateHeight(newZ);
-        }
-    }
     return true;
 }
 
@@ -14336,4 +14294,64 @@ void Unit::Whisper(uint32 textId, Player* target, bool isBossWhisper /*= false*/
     WorldPacket data;
     ChatHandler::BuildChatPacket(data, isBossWhisper ? CHAT_MSG_RAID_BOSS_WHISPER : CHAT_MSG_MONSTER_WHISPER, LANG_UNIVERSAL, this, target, bct->GetText(locale, getGender()), 0, "", locale);
     target->SendDirectMessage(&data);
+}
+
+void Unit::SetDisableGravity(bool apply)
+{
+    if (apply == HasUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY))
+        return;
+
+    if (apply)
+    {
+        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+    }
+    else
+        RemoveUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+
+    if (IsMovedByPlayer())
+    {
+        WorldPacket data(apply ? SMSG_MOVE_GRAVITY_DISABLE : SMSG_MOVE_GRAVITY_ENABLE, 12 + 4);
+        data << GetPackGUID();
+        data << (uint32) 0; // movement counter
+        GetPlayerMovingMe()->GetSession()->SendPacket(&data);
+    }
+    else
+    {
+        WorldPacket data;
+        data.Initialize(apply ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, GetPackGUID().size() + 4);
+        data << GetPackGUID();
+        SendMessageToSet(&data, true);
+    }
+}
+
+void Unit::SetHover(bool apply)
+{
+    if (apply == HasUnitMovementFlag(MOVEMENTFLAG_HOVER))
+        return;
+
+    float hoverHeight = GetFloatValue(UNIT_FIELD_HOVERHEIGHT);
+
+    if (apply)
+    {
+        AddUnitMovementFlag(MOVEMENTFLAG_HOVER);
+    }
+    else
+    {
+        RemoveUnitMovementFlag(MOVEMENTFLAG_HOVER);
+    }
+
+    if (IsMovedByPlayer())
+    {
+        WorldPacket data(apply ? SMSG_MOVE_SET_HOVER : SMSG_MOVE_UNSET_HOVER, 12 + 4);
+        data << GetPackGUID();
+        data << (uint32)0; // movement counter
+        GetPlayerMovingMe()->GetSession()->SendPacket(&data);
+    }
+    else
+    {
+        WorldPacket data;
+        data.Initialize(apply ? SMSG_SPLINE_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, GetPackGUID().size() + 4);
+        data << GetPackGUID();
+        SendMessageToSet(&data, true);
+    }
 }

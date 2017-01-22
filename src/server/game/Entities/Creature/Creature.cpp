@@ -2255,6 +2255,11 @@ bool Creature::LoadCreaturesAddon()
     if (cainfo->mount != 0)
         Mount(cainfo->mount);
 
+    // these 2 hardcoded values are both the ACU entry (for some reason, it has 2 entry).
+    // The ACU needs this movement flag in order to not fall to the ground as soon as it pops
+    if (this->GetCreatureTemplate()->Entry == 33670 || this->GetCreatureTemplate()->Entry == 34109) 
+        AddUnitMovementFlag(MOVEMENTFLAG_DISABLE_GRAVITY);
+
     if (cainfo->bytes1 != 0)
     {
         // 0 StandState
@@ -2628,22 +2633,6 @@ bool Creature::SetWalk(bool enable)
     return true;
 }
 
-bool Creature::SetDisableGravity(bool disable, bool packetOnly/*=false*/)
-{
-    //! It's possible only a packet is sent but moveflags are not updated
-    //! Need more research on this
-    if (!packetOnly && !Unit::SetDisableGravity(disable))
-        return false;
-
-    if (!movespline->Initialized())
-        return true;
-
-    WorldPacket data(disable ? SMSG_SPLINE_MOVE_GRAVITY_DISABLE : SMSG_SPLINE_MOVE_GRAVITY_ENABLE, 9);
-    data << GetPackGUID();
-    SendMessageToSet(&data, false);
-    return true;
-}
-
 bool Creature::SetSwim(bool enable)
 {
     if (!Unit::SetSwim(enable))
@@ -2697,27 +2686,6 @@ bool Creature::SetFeatherFall(bool enable, bool packetOnly /* = false */)
     WorldPacket data(enable ? SMSG_SPLINE_MOVE_FEATHER_FALL : SMSG_SPLINE_MOVE_NORMAL_FALL);
     data << GetPackGUID();
     SendMessageToSet(&data, true);
-    return true;
-}
-
-bool Creature::SetHover(bool enable, bool packetOnly /*= false*/)
-{
-    if (!packetOnly && !Unit::SetHover(enable))
-        return false;
-
-    //! Unconfirmed for players:
-    if (enable)
-        SetByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
-    else
-        RemoveByteFlag(UNIT_FIELD_BYTES_1, 3, UNIT_BYTE1_FLAG_HOVER);
-
-    if (!movespline->Initialized())
-        return true;
-
-    //! Not always a packet is sent
-    WorldPacket data(enable ? SMSG_SPLINE_MOVE_SET_HOVER : SMSG_SPLINE_MOVE_UNSET_HOVER, 9);
-    data << GetPackGUID();
-    SendMessageToSet(&data, false);
     return true;
 }
 
@@ -2798,18 +2766,18 @@ void Creature::UpdateMovementFlags()
 
     bool isInAir = (G3D::fuzzyGt(GetPositionZMinusOffset(), ground + 0.05f) || G3D::fuzzyLt(GetPositionZMinusOffset(), ground - 0.05f)); // Can be underground too, prevent the falling
 
-    if (GetCreatureTemplate()->InhabitType & INHABIT_AIR && isInAir && !IsFalling())
-    {
-        if (GetCreatureTemplate()->InhabitType & INHABIT_GROUND)
-            SetCanFly(true);
-        else
-            SetDisableGravity(true);
-    }
-    else
-    {
-        SetCanFly(false);
-        SetDisableGravity(false);
-    }
+    //if (GetCreatureTemplate()->InhabitType & INHABIT_AIR && isInAir && !IsFalling())
+    //{
+    //    if (GetCreatureTemplate()->InhabitType & INHABIT_GROUND)
+    //        SetCanFly(true);
+    //    else
+    //        SetDisableGravity(true);
+    //}
+    //else
+    //{
+    //    SetCanFly(false);
+    //    SetDisableGravity(false);
+    //}
 
     if (!isInAir)
         RemoveUnitMovementFlag(MOVEMENTFLAG_FALLING);
