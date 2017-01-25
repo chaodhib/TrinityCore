@@ -99,7 +99,7 @@ public:
             { "boundary",      rbac::RBAC_PERM_COMMAND_DEBUG_BOUNDARY,      false, &HandleDebugBoundaryCommand,         "" },
             { "raidreset",     rbac::RBAC_PERM_COMMAND_INSTANCE_UNBIND,     false, &HandleDebugRaidResetCommand,        "" },
             { "neargraveyard", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugNearGraveyard,           "" },
-            { "gravity", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugGravity,           "" },
+            { "disablegravity", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugGravity,           "" },
             { "hover", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugHover,           "" },
             { "sethoverheight", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugSetHoverHeight,           "" },
         };
