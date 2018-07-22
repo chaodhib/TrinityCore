@@ -53,6 +53,8 @@
 #include "WorldSocket.h"
 #include <zlib.h>
 
+#include "rdkafkacpp.h"
+
 namespace {
 
 std::string const DefaultPlayerName = "<none>";
@@ -551,6 +553,8 @@ void WorldSession::LogoutPlayer(bool save)
 
         TC_METRIC_EVENT("player_events", "Logout", _player->GetName());
 
+        BroadCastGearSnapshot();
+
         //! Remove the player from the world
         // the player may not be in the world when logging out
         // e.g if he got disconnected during a transfer to another map
@@ -642,6 +646,12 @@ void WorldSession::ResetTimeOutTime(bool onlyActive)
 bool WorldSession::IsConnectionIdle() const
 {
     return m_timeOutTime < GameTime::GetGameTime() && !m_inQueue;
+}
+
+void WorldSession::BroadCastGearSnapshot() const
+{
+    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
 }
 
 void WorldSession::Handle_NULL(WorldPacket& null)

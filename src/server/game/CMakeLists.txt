@@ -76,3 +76,19 @@ endif()
 if (USE_COREPCH)
   add_cxx_pch(game ${PRIVATE_PCH_HEADER})
 endif ()
+
+SET(LIBRDKAFKA_FOLDER "${CMAKE_SOURCE_DIR}/dep/librdkafka")
+
+include_directories(${LIBRDKAFKA_FOLDER}/build/native/include/librdkafka)
+
+target_link_libraries(game
+  PUBLIC
+    ${LIBRDKAFKA_FOLDER}/build/native/lib/win7/x64/win7-x64-Release/v120/librdkafkacpp.lib
+)
+
+# based on worldserver CMake. This configuration will only work when using Visual Studio
+add_custom_command(TARGET game POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${LIBRDKAFKA_FOLDER}/runtimes/win7-x64/native"
+        ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+        )
