@@ -1842,6 +1842,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         void CastItemUseSpell(Item* item, SpellCastTargets const& targets, uint8 cast_count, uint32 glyphIndex);
 
         void SendEquipmentSetList();
+        std::string GetEquipmentSetList() const;
         void SetEquipmentSet(EquipmentSetInfo::EquipmentSetData const& eqset);
         void DeleteEquipmentSet(uint64 setGuid);
 

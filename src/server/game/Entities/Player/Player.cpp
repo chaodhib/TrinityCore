@@ -25461,6 +25461,23 @@ void Player::SendEquipmentSetList()
     SendDirectMessage(&data);
 }
 
+std::string Player::GetEquipmentSetList() const
+{
+    std::string result;
+    for (uint16 slotId = 0; slotId < EQUIPMENT_SLOT_END; slotId++)
+    {
+        if (Item *item = GetItemByPos(INVENTORY_SLOT_BAG_0, slotId))
+        {
+            result += std::to_string(slotId);
+            result += ':';
+            result += std::to_string(item->GetEntry()); // item template id
+            result += '|';
+        }
+    }
+
+    return result;
+}
+
 void Player::SetEquipmentSet(EquipmentSetInfo::EquipmentSetData const& eqSet)
 {
     if (eqSet.Guid != 0)

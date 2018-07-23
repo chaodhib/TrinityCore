@@ -443,6 +443,7 @@ class TC_GAME_API WorldSession
         bool IsARecruiter() const { return isRecruiter; }
 
         void BroadCastGearSnapshot() const;
+        std::string ConstructGearSnapshot() const;
 
     public:                                                 // opcodes handlers
 

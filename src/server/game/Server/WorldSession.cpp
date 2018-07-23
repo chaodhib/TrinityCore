@@ -54,6 +54,7 @@
 #include <zlib.h>
 
 #include "rdkafkacpp.h"
+#include <chrono>
 
 namespace {
 
@@ -697,13 +698,12 @@ void WorldSession::BroadCastGearSnapshot() const
 
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
     RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
-    conf->set("group.id", "1", errstr);
 
-    if (conf->set("compression.codec", compressionCodec, errstr) !=
-        RdKafka::Conf::CONF_OK) {
-        std::cerr << errstr << std::endl;
-        exit(1);
-    }
+    //if (conf->set("compression.codec", compressionCodec, errstr) !=
+    //    RdKafka::Conf::CONF_OK) {
+    //    std::cerr << errstr << std::endl;
+    //    exit(1);
+    //}
 
     conf->set("metadata.broker.list", brokers, errstr);
     ExampleEventCb ex_event_cb;
@@ -741,7 +741,8 @@ void WorldSession::BroadCastGearSnapshot() const
     /*
     * Produce message
     */
-    std::string line = "abcd";
+    std::string line = ConstructGearSnapshot(); //"abcd";
+    
     RdKafka::ErrorCode resp = producer->produce(topic, partition,RdKafka::Producer::RK_MSG_COPY /* Copy payload */,const_cast<char *>(line.c_str()), line.size(),NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " <<
@@ -757,10 +758,29 @@ void WorldSession::BroadCastGearSnapshot() const
     //delete conf;
     //delete tconf;
 
+
     //while (run && producer->outq_len() > 0) {
     //    std::cerr << "Waiting for " << producer->outq_len() << std::endl;
     //    producer->poll(1000);
     //}
+}
+
+std::string WorldSession::ConstructGearSnapshot() const
+{
+    std::string result;
+
+    // player id
+    result += std::to_string(GetPlayer()->GetGUID().GetCounter());
+    result += '#';
+
+    // timestamp
+    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    result += '#';
+
+    // add gear snapshot
+    result += GetPlayer()->GetEquipmentSetList();
+
+    return result;
 }
 
 void WorldSession::Handle_NULL(WorldPacket& null)
