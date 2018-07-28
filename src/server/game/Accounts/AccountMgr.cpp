@@ -62,6 +62,8 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     PreparedStatement* stmt = nullptr;
     if (GetId(username) == 0)
     {
+        TC_LOG_INFO("custom", "creation of new account. nominal case.");
+
         stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
 
         stmt->setString(0, username);
@@ -76,6 +78,8 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     }
     else
     {
+        TC_LOG_INFO("custom", "creation of new account. exception case. kafka sync previously failed.");
+
         /*
         this case should be extremly rare: when an insert 'account' succeded but sending the event to kafka failed because of a crash. in this case,
         the caller needs to create the account again. in this case, he could use a different password & email.
@@ -606,7 +610,10 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
 
 bool AccountMgr::IsSentToKafka(std::string const & username)
 {
-    return false;
+    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_CHECK_ACCOUNT_KAFKA_OK);
+    stmt->setString(0, username);
+    PreparedQueryResult result = LoginDatabase.Query(stmt);
+    return (result) ? true : false;
 }
 
 std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
