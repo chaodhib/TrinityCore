@@ -699,12 +699,6 @@ void WorldSession::BroadCastGearSnapshot() const
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
     RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
 
-    //if (conf->set("compression.codec", compressionCodec, errstr) !=
-    //    RdKafka::Conf::CONF_OK) {
-    //    std::cerr << errstr << std::endl;
-    //    exit(1);
-    //}
-
     conf->set("metadata.broker.list", brokers, errstr);
     ExampleEventCb ex_event_cb;
     conf->set("event_cb", &ex_event_cb, errstr);
