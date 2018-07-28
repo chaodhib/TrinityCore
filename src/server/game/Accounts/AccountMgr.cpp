@@ -29,6 +29,10 @@
 #include "World.h"
 #include "WorldSession.h"
 
+#include "rdkafkacpp.h"
+#include <chrono>
+#include <iostream>
+
 AccountMgr::AccountMgr() { }
 
 AccountMgr::~AccountMgr()
@@ -54,20 +58,56 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     Utf8ToUpperOnlyLatin(password);
     Utf8ToUpperOnlyLatin(email);
 
-    if (GetId(username))
+    if (GetId(username) && IsSentToKafka(username))
         return AccountOpResult::AOR_NAME_ALREADY_EXIST;                       // username does already exist
 
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
+    // part 1: Add row in account table
+    PreparedStatement* stmt = nullptr;
+    if (GetId(username) == 0)
+    {
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
 
+        stmt->setString(0, username);
+        stmt->setString(1, CalculateShaPassHash(username, password));
+        stmt->setString(2, email);
+        stmt->setString(3, email);
+
+        LoginDatabase.DirectExecute(stmt); // Enforce saving, otherwise AddGroup can fail
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
+        LoginDatabase.Execute(stmt);
+    }
+    else
+    {
+        /*
+        this case should be extremly rare: when an insert 'account' succeded but sending the event to kafka failed because of a crash. in this case,
+        the caller needs to create the account again. in this case, he could use a different password & email.
+        */
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT);
+
+        stmt->setString(0, CalculateShaPassHash(username, password));
+        stmt->setString(1, email);
+        stmt->setString(2, email);
+        stmt->setString(3, username);
+
+        LoginDatabase.DirectExecute(stmt);
+
+        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
+        LoginDatabase.Execute(stmt);
+    }
+
+    // part 2: Send to Kafka
+    uint32 accountId = GetId(username);
+    std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
+    bool isSuccess = BroadCastAccountSnapshot(messageToSend);
+
+    if (!isSuccess)
+        return AccountOpResult::AOR_DB_INTERNAL_ERROR;
+
+    // part 3: Saved the fact the message was sent
+    stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
     stmt->setString(0, username);
-    stmt->setString(1, CalculateShaPassHash(username, password));
-    stmt->setString(2, email);
-    stmt->setString(3, email);
-
-    LoginDatabase.DirectExecute(stmt); // Enforce saving, otherwise AddGroup can fail
-
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
-    LoginDatabase.Execute(stmt);
+    LoginDatabase.DirectExecute(stmt);
 
     return AccountOpResult::AOR_OK;                                          // everything's fine
 }
@@ -563,6 +603,144 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
     TC_LOG_DEBUG("rbac", "AccountMgr::HasPermission [AccountId: %u, PermissionId: %u, realmId: %d]: %u",
                    accountId, permissionId, realmId, hasPermission);
     return hasPermission;
+}
+
+bool AccountMgr::IsSentToKafka(std::string const & username)
+{
+    return false;
+}
+
+std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
+{
+    std::string result;
+
+    // account id
+    result += std::to_string(accountId);
+    result += '#';
+
+    // timestamp
+    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    result += '#';
+
+    // username
+    result += username;
+    result += '#';
+
+    // hashedPassword
+    result += hashedPassword;
+
+    return result;
+}
+
+class ExampleEventCb : public RdKafka::EventCb {
+public:
+    void event_cb(RdKafka::Event &event) {
+        switch (event.type())
+        {
+            case RdKafka::Event::EVENT_ERROR:
+                std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " << event.str() << std::endl;
+                break;
+
+            case RdKafka::Event::EVENT_STATS:
+                std::cerr << "\"STATS\": " << event.str() << std::endl;
+                break;
+
+            case RdKafka::Event::EVENT_LOG:
+                fprintf(stderr, "LOG-%i-%s: %s\n", event.severity(), event.fac().c_str(), event.str().c_str());
+                break;
+
+            default:
+                std::cerr << "EVENT " << event.type() << " (" << RdKafka::err2str(event.err()) << "): " <<
+                    event.str() << std::endl;
+                break;
+        }
+    }
+};
+
+class ExampleDeliveryReportCb : public RdKafka::DeliveryReportCb {
+public:
+    void dr_cb(RdKafka::Message &message) {
+        std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
+        if (message.key())
+            std::cout << "Key: " << *(message.key()) << ";" << std::endl;
+    }
+};
+
+bool AccountMgr::BroadCastAccountSnapshot(std::string message) const
+{
+    std::string brokers = "localhost";
+    std::string errstr;
+    std::string topic_str = "ACCOUNT_SNAPSHOT";
+    std::string compressionCodec = "none";
+
+    int32_t partition = RdKafka::Topic::PARTITION_UA;
+
+    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
+
+    //if (conf->set("compression.codec", compressionCodec, errstr) !=
+    //    RdKafka::Conf::CONF_OK) {
+    //    std::cerr << errstr << std::endl;
+    //    exit(1);
+    //}
+
+    conf->set("metadata.broker.list", brokers, errstr);
+    ExampleEventCb ex_event_cb;
+    conf->set("event_cb", &ex_event_cb, errstr);
+
+    ExampleDeliveryReportCb ex_dr_cb;
+    conf->set("dr_cb", &ex_dr_cb, errstr);
+
+    if (conf->set("acks", "all", errstr) !=
+        RdKafka::Conf::CONF_OK) {
+        std::cerr << errstr << std::endl;
+        exit(1);
+    }
+
+    /*
+    * Create producer using accumulated global configuration.
+    */
+    RdKafka::Producer *producer = RdKafka::Producer::create(conf, errstr);
+    if (!producer) {
+        std::cerr << "Failed to create producer: " << errstr << std::endl;
+        exit(1);
+    }
+
+    std::cout << "% Created producer " << producer->name() << std::endl;
+
+    /*
+    * Create topic handle.
+    */
+    RdKafka::Topic *topic = RdKafka::Topic::create(producer, topic_str, tconf, errstr);
+    if (!topic) {
+        std::cerr << "Failed to create topic: " << errstr << std::endl;
+        exit(1);
+    }
+
+    /*
+    * Produce message
+    */
+    std::string line = message;
+
+    // todo: make the send synchronous
+    RdKafka::ErrorCode resp = producer->produce(topic, partition, RdKafka::Producer::RK_MSG_COPY /* Copy payload */, const_cast<char *>(line.c_str()), line.size(), NULL, NULL);
+    if (resp != RdKafka::ERR_NO_ERROR)
+        std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
+    else
+        std::cerr << "% Produced message (" << line.size() << " bytes)" << std::endl;
+
+    producer->poll(0);
+
+    //delete topic;
+    //delete producer;
+    //delete conf;
+    //delete tconf;
+
+
+    //while (run && producer->outq_len() > 0) {
+    //    std::cerr << "Waiting for " << producer->outq_len() << std::endl;
+    //    producer->poll(1000);
+    //}
 }
 
 void AccountMgr::ClearRBAC()

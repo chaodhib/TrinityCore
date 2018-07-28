@@ -80,6 +80,7 @@ class TC_GAME_API AccountMgr
         static bool IsAdminAccount(uint32 gmlevel);
         static bool IsConsoleAccount(uint32 gmlevel);
         static bool HasPermission(uint32 accountId, uint32 permission, uint32 realmId);
+        static bool IsSentToKafka(std::string const& username);
 
         void UpdateAccountAccess(rbac::RBACData* rbac, uint32 accountId, uint8 securityLevel, int32 realmId);
 
@@ -90,6 +91,8 @@ class TC_GAME_API AccountMgr
         rbac::RBACPermissionContainer const& GetRBACDefaultPermissions(uint8 secLevel);
 
     private:
+        std::string ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const;
+        bool BroadCastAccountSnapshot(std::string message) const;
         void ClearRBAC();
         rbac::RBACPermissionsContainer _permissions;
         rbac::RBACDefaultPermissionsContainer _defaultPermissions;
