@@ -10,7 +10,9 @@ MessagingMgr::MessagingMgr()
 
 MessagingMgr::~MessagingMgr()
 {
-   
+    delete accountTopic;
+    delete gearTopic;
+    delete producer;
 }
 
 void MessagingMgr::InitProducer()
@@ -42,19 +44,20 @@ void MessagingMgr::InitProducer()
         exit(1);
     }
 
+    delete conf;
+
     std::cout << "% Created producer " << this->producer->name() << std::endl;
 }
 
 void MessagingMgr::InitGearTopic()
 {
     std::string topic_str = "GEAR_SNAPSHOT";
-    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
     std::string errstr;
 
     /*
     * Create topic handle.
     */
-    this->gearTopic = RdKafka::Topic::create(producer, topic_str, tconf, errstr);
+    this->gearTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
     if (!gearTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
@@ -64,13 +67,12 @@ void MessagingMgr::InitGearTopic()
 void MessagingMgr::InitAccountTopic()
 {
     std::string topic_str = "ACCOUNT_SNAPSHOT";
-    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
     std::string errstr;
 
     /*
     * Create topic handle.
     */
-    this->accountTopic = RdKafka::Topic::create(producer, topic_str, tconf, errstr);
+    this->accountTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
     if (!accountTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
@@ -84,7 +86,7 @@ void MessagingMgr::Update()
 
 void MessagingMgr::SendGearSnapshot(std::string message)
 {
-    RdKafka::ErrorCode resp = producer->produce(this->gearTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY /* Copy payload */, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
+    RdKafka::ErrorCode resp = producer->produce(this->gearTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else
@@ -93,7 +95,7 @@ void MessagingMgr::SendGearSnapshot(std::string message)
 
 void MessagingMgr::SendAccountSnapshot(std::string message)
 {
-    RdKafka::ErrorCode resp = producer->produce(this->accountTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY /* Copy payload */, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
+    RdKafka::ErrorCode resp = producer->produce(this->accountTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else
