@@ -92,7 +92,6 @@ class TC_GAME_API AccountMgr
 
     private:
         std::string ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const;
-        bool BroadCastAccountSnapshot(std::string message) const;
         void ClearRBAC();
         rbac::RBACPermissionsContainer _permissions;
         rbac::RBACDefaultPermissionsContainer _defaultPermissions;

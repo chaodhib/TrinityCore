@@ -2135,6 +2135,9 @@ void World::SetInitialWorldSettings()
         });
     }
 
+    TC_LOG_INFO("server.loading", "Setting up Kafka producer...");
+    sMessagingMgr->instance();
+
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
     TC_LOG_INFO("server.worldserver", "World initialized in %u minutes %u seconds", (startupDuration / 60000), ((startupDuration % 60000) / 1000));

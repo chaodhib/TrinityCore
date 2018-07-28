@@ -20,6 +20,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
+#include "MessagingMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Realm.h"
@@ -28,10 +29,6 @@
 #include "Util.h"
 #include "World.h"
 #include "WorldSession.h"
-
-#include "rdkafkacpp.h"
-#include <chrono>
-#include <iostream>
 
 AccountMgr::AccountMgr() { }
 
@@ -99,10 +96,12 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     // part 2: Send to Kafka
     uint32 accountId = GetId(username);
     std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
-    bool isSuccess = BroadCastAccountSnapshot(messageToSend);
+    /*bool isSuccess = BroadCastAccountSnapshot(messageToSend);*/
+    sMessagingMgr->SendAccountSnapshot(messageToSend);
 
-    if (!isSuccess)
-        return AccountOpResult::AOR_DB_INTERNAL_ERROR;
+    // todo
+    //if (!isSuccess)
+        //return AccountOpResult::AOR_DB_INTERNAL_ERROR;
 
     // part 3: Saved the fact the message was sent
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
@@ -630,111 +629,6 @@ std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string u
     result += hashedPassword;
 
     return result;
-}
-
-class ExampleEventCb : public RdKafka::EventCb {
-public:
-    void event_cb(RdKafka::Event &event) {
-        switch (event.type())
-        {
-            case RdKafka::Event::EVENT_ERROR:
-                std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " << event.str() << std::endl;
-                break;
-
-            case RdKafka::Event::EVENT_STATS:
-                std::cerr << "\"STATS\": " << event.str() << std::endl;
-                break;
-
-            case RdKafka::Event::EVENT_LOG:
-                fprintf(stderr, "LOG-%i-%s: %s\n", event.severity(), event.fac().c_str(), event.str().c_str());
-                break;
-
-            default:
-                std::cerr << "EVENT " << event.type() << " (" << RdKafka::err2str(event.err()) << "): " <<
-                    event.str() << std::endl;
-                break;
-        }
-    }
-};
-
-class ExampleDeliveryReportCb : public RdKafka::DeliveryReportCb {
-public:
-    void dr_cb(RdKafka::Message &message) {
-        std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
-        if (message.key())
-            std::cout << "Key: " << *(message.key()) << ";" << std::endl;
-    }
-};
-
-bool AccountMgr::BroadCastAccountSnapshot(std::string message) const
-{
-    std::string brokers = "localhost";
-    std::string errstr;
-    std::string topic_str = "ACCOUNT_SNAPSHOT";
-    std::string compressionCodec = "none";
-
-    int32_t partition = RdKafka::Topic::PARTITION_UA;
-
-    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
-    RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
-
-    conf->set("metadata.broker.list", brokers, errstr);
-    ExampleEventCb ex_event_cb;
-    conf->set("event_cb", &ex_event_cb, errstr);
-
-    ExampleDeliveryReportCb ex_dr_cb;
-    conf->set("dr_cb", &ex_dr_cb, errstr);
-
-    if (conf->set("acks", "all", errstr) !=
-        RdKafka::Conf::CONF_OK) {
-        std::cerr << errstr << std::endl;
-        exit(1);
-    }
-
-    /*
-    * Create producer using accumulated global configuration.
-    */
-    RdKafka::Producer *producer = RdKafka::Producer::create(conf, errstr);
-    if (!producer) {
-        std::cerr << "Failed to create producer: " << errstr << std::endl;
-        exit(1);
-    }
-
-    std::cout << "% Created producer " << producer->name() << std::endl;
-
-    /*
-    * Create topic handle.
-    */
-    RdKafka::Topic *topic = RdKafka::Topic::create(producer, topic_str, tconf, errstr);
-    if (!topic) {
-        std::cerr << "Failed to create topic: " << errstr << std::endl;
-        exit(1);
-    }
-
-    /*
-    * Produce message
-    */
-    std::string line = message;
-
-    // todo: make the send synchronous
-    RdKafka::ErrorCode resp = producer->produce(topic, partition, RdKafka::Producer::RK_MSG_COPY /* Copy payload */, const_cast<char *>(line.c_str()), line.size(), NULL, NULL);
-    if (resp != RdKafka::ERR_NO_ERROR)
-        std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
-    else
-        std::cerr << "% Produced message (" << line.size() << " bytes)" << std::endl;
-
-    producer->poll(0);
-
-    //delete topic;
-    //delete producer;
-    //delete conf;
-    //delete tconf;
-
-
-    //while (run && producer->outq_len() > 0) {
-    //    std::cerr << "Waiting for " << producer->outq_len() << std::endl;
-    //    producer->poll(1000);
-    //}
 }
 
 void AccountMgr::ClearRBAC()
