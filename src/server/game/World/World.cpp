@@ -2429,6 +2429,9 @@ void World::Update(uint32 diff)
     // update the instance reset times
     sInstanceSaveMgr->Update();
 
+    // kafka update
+    sMessagingMgr->Update();
+
     // Check for shutdown warning
     if (_guidWarn && !_guidAlert)
     {
@@ -2447,8 +2450,6 @@ void World::Update(uint32 diff)
     // Stats logger update
     sMetric->Update();
     TC_METRIC_VALUE("update_time_diff", diff);
-
-    sMessagingMgr->Update();
 }
 
 void World::ForceGameEventUpdate()

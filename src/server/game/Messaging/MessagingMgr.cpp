@@ -23,10 +23,7 @@ void MessagingMgr::InitProducer()
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
 
     conf->set("metadata.broker.list", brokers, errstr);
-    ExampleEventCb ex_event_cb;
     conf->set("event_cb", &ex_event_cb, errstr);
-
-    ExampleDeliveryReportCb ex_dr_cb;
     conf->set("dr_cb", &ex_dr_cb, errstr);
 
     if (conf->set("acks", "all", errstr) !=
@@ -81,7 +78,7 @@ void MessagingMgr::InitAccountTopic()
 
 void MessagingMgr::Update()
 {
-    //this->producer->poll(0);
+    this->producer->poll(0);
 }
 
 void MessagingMgr::SendGearSnapshot(std::string message)

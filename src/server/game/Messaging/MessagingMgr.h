@@ -61,6 +61,9 @@ class TC_GAME_API MessagingMgr
         RdKafka::Producer *producer;
         RdKafka::Topic *accountTopic;
         RdKafka::Topic *gearTopic;
+
+        ExampleDeliveryReportCb ex_dr_cb;
+        ExampleEventCb ex_event_cb;
 };
 
 #define sMessagingMgr MessagingMgr::instance()
