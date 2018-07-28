@@ -56,6 +56,7 @@
 #include "M2Stores.h"
 #include "MapManager.h"
 #include "Memory.h"
+#include "MessagingMgr.h"
 #include "Metric.h"
 #include "MMapFactory.h"
 #include "ObjectAccessor.h"
@@ -2443,6 +2444,8 @@ void World::Update(uint32 diff)
     // Stats logger update
     sMetric->Update();
     TC_METRIC_VALUE("update_time_diff", diff);
+
+    sMessagingMgr->Update();
 }
 
 void World::ForceGameEventUpdate()
