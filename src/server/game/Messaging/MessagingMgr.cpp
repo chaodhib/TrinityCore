@@ -233,7 +233,13 @@ void MessagingMgr::SendCharacter(std::string message)
 
 void MessagingMgr::ConsumeGearPurchaseEvents()
 {
-    RdKafka::Message *msg = consumer->consume(100);
+    RdKafka::Message *msg = consumer->consume(1000);
+    std::cout << "message processed" << std::endl;
+    if (msg->err() == RdKafka::ERR_NO_ERROR)
+    {
+        std::cout << "message found" << std::endl;
+        printf("%.*s\n", static_cast<int>(msg->len()), static_cast<const char *>(msg->payload()));
+    }
     delete msg;
 }
 
