@@ -34,6 +34,7 @@
 #include "Language.h"
 #include "Log.h"
 #include "Map.h"
+#include "MessagingMgr.h"
 #include "Metric.h"
 #include "MotionMaster.h"
 #include "ObjectAccessor.h"
@@ -583,6 +584,8 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
             trans->Append(stmt);
 
             LoginDatabase.CommitTransaction(trans);
+
+            sMessagingMgr->SendCharacter(std::to_string(GetAccountId()) + '#' + std::to_string(newChar.GetGUID().GetCounter()));
 
             SendCharCreate(CHAR_CREATE_SUCCESS);
 

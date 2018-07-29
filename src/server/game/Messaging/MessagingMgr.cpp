@@ -6,6 +6,7 @@ MessagingMgr::MessagingMgr()
     InitProducer();
     InitGearTopic();
     InitAccountTopic();
+    InitCharacterTopic();
 }
 
 MessagingMgr::~MessagingMgr()
@@ -55,7 +56,7 @@ void MessagingMgr::InitGearTopic()
     * Create topic handle.
     */
     this->gearTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
-    if (!gearTopic) {
+    if (!this->gearTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
     }
@@ -70,7 +71,22 @@ void MessagingMgr::InitAccountTopic()
     * Create topic handle.
     */
     this->accountTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
-    if (!accountTopic) {
+    if (!this->accountTopic) {
+        std::cerr << "Failed to create topic: " << errstr << std::endl;
+        exit(1);
+    }
+}
+
+void MessagingMgr::InitCharacterTopic()
+{
+    std::string topic_str = "CHARACTER";
+    std::string errstr;
+
+    /*
+    * Create topic handle.
+    */
+    this->characterTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
+    if (!this->characterTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
     }
@@ -93,6 +109,15 @@ void MessagingMgr::SendGearSnapshot(std::string message)
 void MessagingMgr::SendAccountSnapshot(std::string message)
 {
     RdKafka::ErrorCode resp = producer->produce(this->accountTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
+    if (resp != RdKafka::ERR_NO_ERROR)
+        std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
+    else
+        std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
+}
+
+void MessagingMgr::SendCharacter(std::string message)
+{
+    RdKafka::ErrorCode resp = producer->produce(this->characterTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else

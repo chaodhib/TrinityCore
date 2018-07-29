@@ -50,17 +50,20 @@ class TC_GAME_API MessagingMgr
         void InitProducer();
         void InitGearTopic();
         void InitAccountTopic();
+        void InitCharacterTopic();
 
     public:
         static MessagingMgr* instance();
         void Update();
         void SendGearSnapshot(std::string message);
         void SendAccountSnapshot(std::string message);
+        void SendCharacter(std::string message);
 
     private:
         RdKafka::Producer *producer;
         RdKafka::Topic *accountTopic;
         RdKafka::Topic *gearTopic;
+        RdKafka::Topic *characterTopic;
 
         ExampleDeliveryReportCb ex_dr_cb;
         ExampleEventCb ex_event_cb;
