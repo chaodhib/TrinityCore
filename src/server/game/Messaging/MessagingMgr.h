@@ -41,6 +41,11 @@ public:
     }
 };
 
+class GearPurchaseConsumeCb : public RdKafka::ConsumeCb {
+    public:
+        void consume_cb(RdKafka::Message &msg, void *opaque);
+};
+
 class TC_GAME_API MessagingMgr
 {
     private:
@@ -48,9 +53,12 @@ class TC_GAME_API MessagingMgr
         ~MessagingMgr();
 
         void InitProducer();
+        void InitConsumer();
         void InitGearTopic();
         void InitAccountTopic();
         void InitCharacterTopic();
+        void InitGearPurchaseTopic();
+        void ConsumerSubscribe();
 
     public:
         static MessagingMgr* instance();
@@ -58,15 +66,19 @@ class TC_GAME_API MessagingMgr
         void SendGearSnapshot(std::string message);
         void SendAccountSnapshot(std::string message);
         void SendCharacter(std::string message);
+        void ConsumeGearPurchaseEvents();
 
     private:
         RdKafka::Producer *producer;
+        RdKafka::KafkaConsumer *consumer;
         RdKafka::Topic *accountTopic;
         RdKafka::Topic *gearTopic;
         RdKafka::Topic *characterTopic;
+        RdKafka::Topic *gearPurchaseTopic;
 
         ExampleDeliveryReportCb ex_dr_cb;
         ExampleEventCb ex_event_cb;
+        GearPurchaseConsumeCb gearPurchaseConsumerCb;
 };
 
 #define sMessagingMgr MessagingMgr::instance()

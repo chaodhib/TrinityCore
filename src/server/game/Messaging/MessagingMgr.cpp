@@ -1,19 +1,72 @@
 
 #include "MessagingMgr.h"
 
+static int verbosity = 3;
+
+void GearPurchaseConsumeCb::consume_cb(RdKafka::Message &msg, void *opaque) {
+
+    switch (msg.err()) {
+    case RdKafka::ERR__TIMED_OUT:
+        break;
+
+    case RdKafka::ERR_NO_ERROR:
+        /* Real message */
+        if (verbosity >= 3)
+            std::cerr << "Read msg at offset " << msg.offset() << std::endl;
+        RdKafka::MessageTimestamp ts;
+        ts = msg.timestamp();
+        if (verbosity >= 2 &&
+            ts.type != RdKafka::MessageTimestamp::MSG_TIMESTAMP_NOT_AVAILABLE) {
+            std::string tsname = "?";
+            if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_CREATE_TIME)
+                tsname = "create time";
+            else if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_LOG_APPEND_TIME)
+                tsname = "log append time";
+            std::cout << "Timestamp: " << tsname << " " << ts.timestamp << std::endl;
+        }
+        if (verbosity >= 2 && msg.key()) {
+            std::cout << "Key: " << *msg.key() << std::endl;
+        }
+        if (verbosity >= 1) {
+            printf("%.*s\n",
+                static_cast<int>(msg.len()),
+                static_cast<const char *>(msg.payload()));
+        }
+        break;
+
+    case RdKafka::ERR__PARTITION_EOF:
+        break;
+
+    case RdKafka::ERR__UNKNOWN_TOPIC:
+    case RdKafka::ERR__UNKNOWN_PARTITION:
+        std::cerr << "Consume failed: " << msg.errstr() << std::endl;
+        break;
+
+    default:
+        /* Errors */
+        std::cerr << "Consume failed: " << msg.errstr() << std::endl;
+    }
+}
+
 MessagingMgr::MessagingMgr()
 {
     InitProducer();
+    InitConsumer();
     InitGearTopic();
     InitAccountTopic();
     InitCharacterTopic();
+    ConsumerSubscribe();
 }
 
 MessagingMgr::~MessagingMgr()
 {
+    consumer->close();
+
     delete accountTopic;
     delete gearTopic;
+    delete characterTopic;
     delete producer;
+    delete consumer;
 }
 
 void MessagingMgr::InitProducer()
@@ -45,6 +98,59 @@ void MessagingMgr::InitProducer()
     delete conf;
 
     std::cout << "% Created producer " << this->producer->name() << std::endl;
+}
+
+void MessagingMgr::InitConsumer()
+{
+    std::string brokers = "localhost";
+    std::string errstr;
+
+    RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
+    //RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
+
+    conf->set("metadata.broker.list", brokers, errstr);
+    conf->set("consume_cb", &gearPurchaseConsumerCb, errstr);
+    conf->set("event_cb", &ex_event_cb, errstr);
+    //conf->set("default_topic_conf", tconf, errstr);
+    //delete tconf;
+
+    if (conf->set("group.id", "1", errstr) != RdKafka::Conf::CONF_OK) {
+        std::cerr << errstr << std::endl;
+        exit(1);
+    }
+
+    /*
+    * Create consumer using accumulated global configuration.
+    */
+    this->consumer = RdKafka::KafkaConsumer::create(conf, errstr);
+    if (!this->consumer) {
+        std::cerr << "Failed to create consumer: " << errstr << std::endl;
+        exit(1);
+    }
+
+    delete conf;
+
+    std::cout << "% Created consumer " << this->consumer->name() << std::endl;
+}
+
+void MessagingMgr::ConsumerSubscribe()
+{
+    int64_t start_offset = RdKafka::Topic::OFFSET_STORED;
+
+    std::vector<std::string> topics;
+    topics.push_back(std::string("GEAR_PURCHASE"));
+
+    /*
+    * Subscribe to topics
+    */
+    RdKafka::ErrorCode err = consumer->subscribe(topics);
+    if (err) {
+        std::cerr << "Failed to subscribe to " << topics.size() << " topics: "
+            << RdKafka::err2str(err) << std::endl;
+        exit(1);
+    }
+
+    std::cout << "Consumer is now subscribed to topics" << std::endl;
 }
 
 void MessagingMgr::InitGearTopic()
@@ -94,6 +200,7 @@ void MessagingMgr::InitCharacterTopic()
 
 void MessagingMgr::Update()
 {
+    ConsumeGearPurchaseEvents();
     this->producer->poll(0);
 }
 
@@ -122,6 +229,12 @@ void MessagingMgr::SendCharacter(std::string message)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else
         std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
+}
+
+void MessagingMgr::ConsumeGearPurchaseEvents()
+{
+    RdKafka::Message *msg = consumer->consume(100);
+    delete msg;
 }
 
 MessagingMgr* MessagingMgr::instance()
