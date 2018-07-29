@@ -108,7 +108,12 @@ void MessagingMgr::InitConsumer()
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
 
     conf->set("metadata.broker.list", brokers, errstr);
-    conf->set("consume_cb", &gearPurchaseConsumerCb, errstr);
+    
+    if (conf->set("consume_cb", &gearPurchaseConsumerCb, errstr) != RdKafka::Conf::CONF_OK) {
+        std::cerr << errstr << std::endl;
+        exit(1);
+    }
+
     conf->set("event_cb", &ex_event_cb, errstr);
     conf->set("auto.offset.reset", "earliest", errstr);
 
@@ -196,12 +201,6 @@ void MessagingMgr::InitCharacterTopic()
     }
 }
 
-void MessagingMgr::Update()
-{
-    ConsumeGearPurchaseEvents();
-    this->producer->poll(0);
-}
-
 void MessagingMgr::SendGearSnapshot(std::string message)
 {
     RdKafka::ErrorCode resp = producer->produce(this->gearTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
@@ -239,6 +238,12 @@ void MessagingMgr::ConsumeGearPurchaseEvents()
         printf("%.*s\n", static_cast<int>(msg->len()), static_cast<const char *>(msg->payload()));
     }
     delete msg;
+}
+
+void MessagingMgr::Update()
+{
+    ConsumeGearPurchaseEvents();
+    this->producer->poll(0);
 }
 
 MessagingMgr* MessagingMgr::instance()
