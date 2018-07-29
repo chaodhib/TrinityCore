@@ -1,5 +1,6 @@
 
 #include "MessagingMgr.h"
+#include "ShopMgr.h"
 
 static int verbosity = 3;
 
@@ -32,6 +33,9 @@ void GearPurchaseConsumeCb::consume_cb(RdKafka::Message &msg, void *opaque) {
                 static_cast<int>(msg.len()),
                 static_cast<const char *>(msg.payload()));
         }
+
+        sShopMgr->HandlePurchaseOrder(std::string(static_cast<const char *>(msg.payload())));
+
         break;
 
     case RdKafka::ERR__PARTITION_EOF:
