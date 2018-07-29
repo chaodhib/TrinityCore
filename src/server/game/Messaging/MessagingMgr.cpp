@@ -111,6 +111,7 @@ void MessagingMgr::InitConsumer()
     conf->set("metadata.broker.list", brokers, errstr);
     conf->set("consume_cb", &gearPurchaseConsumerCb, errstr);
     conf->set("event_cb", &ex_event_cb, errstr);
+    conf->set("auto.offset.reset", "earliest", errstr);
     //conf->set("default_topic_conf", tconf, errstr);
     //delete tconf;
 
@@ -233,7 +234,7 @@ void MessagingMgr::SendCharacter(std::string message)
 
 void MessagingMgr::ConsumeGearPurchaseEvents()
 {
-    RdKafka::Message *msg = consumer->consume(1000);
+    RdKafka::Message *msg = consumer->consume(0);
     std::cout << "message processed" << std::endl;
     if (msg->err() == RdKafka::ERR_NO_ERROR)
     {
