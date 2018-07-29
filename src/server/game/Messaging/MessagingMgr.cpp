@@ -106,14 +106,11 @@ void MessagingMgr::InitConsumer()
     std::string errstr;
 
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
-    //RdKafka::Conf *tconf = RdKafka::Conf::create(RdKafka::Conf::CONF_TOPIC);
 
     conf->set("metadata.broker.list", brokers, errstr);
     conf->set("consume_cb", &gearPurchaseConsumerCb, errstr);
     conf->set("event_cb", &ex_event_cb, errstr);
     conf->set("auto.offset.reset", "earliest", errstr);
-    //conf->set("default_topic_conf", tconf, errstr);
-    //delete tconf;
 
     if (conf->set("group.id", "1", errstr) != RdKafka::Conf::CONF_OK) {
         std::cerr << errstr << std::endl;
