@@ -613,6 +613,10 @@ void CharacterDatabaseConnection::DoPrepareStatements()
 
     // DeserterTracker
     PrepareStatement(CHAR_INS_DESERTER_TRACK, "INSERT INTO battleground_deserters (guid, type, datetime) VALUES (?, ?, NOW())", CONNECTION_ASYNC);
+
+    // Shop
+    PrepareStatement(CHAR_INS_PROCESSED_ORDER, "INSERT INTO processed_shop_orders (id) VALUES (?)", CONNECTION_ASYNC);
+    PrepareStatement(CHAR_SEL_PROCESSED_ORDER, "SELECT 1 FROM processed_shop_orders where id = ?", CONNECTION_SYNCH);
 }
 
 CharacterDatabaseConnection::CharacterDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
