@@ -72,7 +72,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
 
     std::cout << "new order " << orderId << "." << std::endl;
 
-    // check if character exists
+    // check if character exists @todo: should be in the same transaction as the creation of the item below.
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHECK_GUID);
     stmt->setUInt32(0, characterId);
     result = CharacterDatabase.Query(stmt);
