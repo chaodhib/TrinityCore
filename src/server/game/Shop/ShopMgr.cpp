@@ -107,7 +107,10 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
         draft.AddItem(item);
     }
 
-    draft.SendMailTo(trans, MailReceiver(characterId), sender);
+    Player* receiver = ObjectAccessor::FindConnectedPlayer(ObjectGuid(HighGuid::Player, characterId));
+
+    draft.SendMailTo(trans, MailReceiver(receiver, characterId), sender);
+
 
     // part 2: add the order to the processed orders table
     stmt = CharacterDatabase.GetPreparedStatement(CHAR_INS_PROCESSED_ORDER);
