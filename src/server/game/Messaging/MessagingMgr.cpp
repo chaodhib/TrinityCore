@@ -112,6 +112,11 @@ void MessagingMgr::InitConsumer()
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
 
     conf->set("metadata.broker.list", brokers, errstr);
+
+    if (conf->set("auto.commit.interval.ms ", "30000", errstr) != RdKafka::Conf::CONF_OK) {
+        std::cerr << errstr << std::endl;
+        exit(1);
+    }
     
     if (conf->set("consume_cb", &gearPurchaseConsumerCb, errstr) != RdKafka::Conf::CONF_OK) {
         std::cerr << errstr << std::endl;
