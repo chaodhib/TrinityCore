@@ -55,7 +55,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
     for (const auto& t : tokens) {
         if (i > 102)
         {
-            std::cerr << "too many arguments in ShopMgr::HandlePurchaseOrder" << std::endl;
+            std::cerr << "too many arguments in ShopMgr::HandlePurchaseOrder" << std::endl; // allow for maximum 100 stacks of items.
             return false;
         }
 
@@ -98,7 +98,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
     if (result)
     {
         std::cout << "order " << orderId << " already processed. skipping." << std::endl;
-        return true;
+        return false;
     }
 
     std::cout << "new order " << orderId << "." << std::endl;
@@ -111,7 +111,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
     if (!result)
     {
         std::cout << "order " << orderId << " aborted. Character " + std::to_string(characterId) + " does not exists!" << std::endl;
-        return true;
+        return false;
     }
     
     // check if item template exists
@@ -126,7 +126,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
         if (!result)
         {
             std::cout << "order " << orderId << " aborted. Item " + std::to_string(itemEntry) + " does not exists!" << std::endl;
-            return true;
+            return false;
         }
     }
 
