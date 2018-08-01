@@ -36,14 +36,22 @@ class ExampleDeliveryReportCb : public RdKafka::DeliveryReportCb {
 public:
     void dr_cb(RdKafka::Message &message) {
         std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
-        if (message.key())
-            std::cout << "Key: " << *(message.key()) << ";" << std::endl;
-    }
-};
 
-class GearPurchaseConsumeCb : public RdKafka::ConsumeCb {
-    public:
-        void consume_cb(RdKafka::Message &msg, void *opaque);
+        if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
+
+            //if (message.topic_name() == "ACCOUNT") {
+            //    std::string username = ParseAccountUsername(message.payload);
+            //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
+            //    stmt->setString(0, username);
+            //    LoginDatabase.DirectExecute(stmt);
+            //} else if (message.topic_name() == "CHARACTER") {
+            //    std::string username = ParseAccountUsername(message.payload);
+            //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
+            //    stmt->setString(0, username);
+            //    LoginDatabase.DirectExecute(stmt);
+            //}
+        }
+    }
 };
 
 class TC_GAME_API MessagingMgr
@@ -57,8 +65,9 @@ class TC_GAME_API MessagingMgr
         void InitGearTopic();
         void InitAccountTopic();
         void InitCharacterTopic();
-        void InitGearPurchaseTopic();
         void ConsumerSubscribe();
+
+        void HandleGearPurchaseMessage(RdKafka::Message &msg);
 
     public:
         static MessagingMgr* instance();
@@ -78,7 +87,6 @@ class TC_GAME_API MessagingMgr
 
         ExampleDeliveryReportCb ex_dr_cb;
         ExampleEventCb ex_event_cb;
-        GearPurchaseConsumeCb gearPurchaseConsumerCb;
 };
 
 #define sMessagingMgr MessagingMgr::instance()

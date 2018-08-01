@@ -4,7 +4,7 @@
 
 static int verbosity = 3;
 
-void GearPurchaseConsumeCb::consume_cb(RdKafka::Message &msg, void *opaque) {
+void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
 
     switch (msg.err()) {
     case RdKafka::ERR__TIMED_OUT:
@@ -113,12 +113,7 @@ void MessagingMgr::InitConsumer()
 
     conf->set("metadata.broker.list", brokers, errstr);
 
-    if (conf->set("auto.commit.interval.ms ", "30000", errstr) != RdKafka::Conf::CONF_OK) {
-        std::cerr << errstr << std::endl;
-        exit(1);
-    }
-    
-    if (conf->set("consume_cb", &gearPurchaseConsumerCb, errstr) != RdKafka::Conf::CONF_OK) {
+    if (conf->set("auto.commit.interval.ms", "30000", errstr) != RdKafka::Conf::CONF_OK) {
         std::cerr << errstr << std::endl;
         exit(1);
     }
@@ -240,7 +235,7 @@ void MessagingMgr::SendCharacter(std::string message)
 void MessagingMgr::ConsumeGearPurchaseEvents()
 {
     RdKafka::Message *msg = consumer->consume(0);
-    gearPurchaseConsumerCb.consume_cb(*msg, nullptr);
+    HandleGearPurchaseMessage(*msg);
     delete msg;
 }
 
