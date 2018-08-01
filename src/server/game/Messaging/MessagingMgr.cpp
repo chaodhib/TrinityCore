@@ -1,6 +1,51 @@
 
 #include "MessagingMgr.h"
 #include "ShopMgr.h"
+#include <chrono>
+#include <iostream>
+
+
+void EventCb::event_cb(RdKafka::Event &event) {
+    switch (event.type())
+    {
+    case RdKafka::Event::EVENT_ERROR:
+        std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " << event.str() << std::endl;
+        break;
+
+    case RdKafka::Event::EVENT_STATS:
+        std::cerr << "\"STATS\": " << event.str() << std::endl;
+        break;
+
+    case RdKafka::Event::EVENT_LOG:
+        fprintf(stderr, "LOG-%i-%s: %s\n", event.severity(), event.fac().c_str(), event.str().c_str());
+        break;
+
+    default:
+        std::cerr << "EVENT " << event.type() << " (" << RdKafka::err2str(event.err()) << "): " <<
+            event.str() << std::endl;
+        break;
+    }
+}
+
+void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
+    std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
+
+    if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
+
+        //if (message.topic_name() == "ACCOUNT") {
+        //    std::string username = ParseAccountUsername(message.payload);
+        //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
+        //    stmt->setString(0, username);
+        //    LoginDatabase.DirectExecute(stmt);
+        //} else if (message.topic_name() == "CHARACTER") {
+        //    std::string username = ParseAccountUsername(message.payload);
+        //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
+        //    stmt->setString(0, username);
+        //    LoginDatabase.DirectExecute(stmt);
+        //}
+    }
+}
+
 
 static int verbosity = 3;
 
@@ -81,8 +126,8 @@ void MessagingMgr::InitProducer()
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
 
     conf->set("metadata.broker.list", brokers, errstr);
-    conf->set("event_cb", &ex_event_cb, errstr);
-    conf->set("dr_cb", &ex_dr_cb, errstr);
+    conf->set("event_cb", &event_cb, errstr);
+    conf->set("dr_cb", &dr_cb, errstr);
 
     if (conf->set("acks", "all", errstr) !=
         RdKafka::Conf::CONF_OK) {
@@ -118,7 +163,7 @@ void MessagingMgr::InitConsumer()
         exit(1);
     }
 
-    conf->set("event_cb", &ex_event_cb, errstr);
+    conf->set("event_cb", &event_cb, errstr);
     conf->set("auto.offset.reset", "earliest", errstr);
 
     if (conf->set("group.id", "1", errstr) != RdKafka::Conf::CONF_OK) {

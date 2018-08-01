@@ -4,54 +4,15 @@
 
 #include "Define.h"
 #include "rdkafkacpp.h"
-#include <chrono>
-#include <iostream>
 
-class ExampleEventCb : public RdKafka::EventCb {
+class EventCb : public RdKafka::EventCb {
 public:
-    void event_cb(RdKafka::Event &event) {
-        switch (event.type())
-        {
-        case RdKafka::Event::EVENT_ERROR:
-            std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " << event.str() << std::endl;
-            break;
-
-        case RdKafka::Event::EVENT_STATS:
-            std::cerr << "\"STATS\": " << event.str() << std::endl;
-            break;
-
-        case RdKafka::Event::EVENT_LOG:
-            fprintf(stderr, "LOG-%i-%s: %s\n", event.severity(), event.fac().c_str(), event.str().c_str());
-            break;
-
-        default:
-            std::cerr << "EVENT " << event.type() << " (" << RdKafka::err2str(event.err()) << "): " <<
-                event.str() << std::endl;
-            break;
-        }
-    }
+    void event_cb(RdKafka::Event &event);
 };
 
-class ExampleDeliveryReportCb : public RdKafka::DeliveryReportCb {
+class DeliveryReportCb : public RdKafka::DeliveryReportCb {
 public:
-    void dr_cb(RdKafka::Message &message) {
-        std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
-
-        if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
-
-            //if (message.topic_name() == "ACCOUNT") {
-            //    std::string username = ParseAccountUsername(message.payload);
-            //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-            //    stmt->setString(0, username);
-            //    LoginDatabase.DirectExecute(stmt);
-            //} else if (message.topic_name() == "CHARACTER") {
-            //    std::string username = ParseAccountUsername(message.payload);
-            //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-            //    stmt->setString(0, username);
-            //    LoginDatabase.DirectExecute(stmt);
-            //}
-        }
-    }
+    void dr_cb(RdKafka::Message &message);
 };
 
 class TC_GAME_API MessagingMgr
@@ -85,8 +46,8 @@ class TC_GAME_API MessagingMgr
         RdKafka::Topic *characterTopic;
         RdKafka::Topic *gearPurchaseTopic;
 
-        ExampleDeliveryReportCb ex_dr_cb;
-        ExampleEventCb ex_event_cb;
+        DeliveryReportCb dr_cb;
+        EventCb event_cb;
 };
 
 #define sMessagingMgr MessagingMgr::instance()
