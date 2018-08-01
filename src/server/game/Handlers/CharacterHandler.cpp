@@ -585,7 +585,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
             LoginDatabase.CommitTransaction(trans);
 
-            sMessagingMgr->SendCharacter(std::to_string(GetAccountId()) + '#' + std::to_string(newChar.GetGUID().GetCounter()));
+            sMessagingMgr->SendCharacter(std::to_string(GetAccountId()) + '#' + std::to_string(newChar.GetGUID().GetCounter()) + '#' + newChar.GetName() + '#' + std::to_string(newChar.getClass()));
 
             SendCharCreate(CHAR_CREATE_SUCCESS);
 
