@@ -100,17 +100,7 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     // part 2: Send to Kafka
     uint32 accountId = GetId(username);
     std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
-    /*bool isSuccess = BroadCastAccountSnapshot(messageToSend);*/
     sMessagingMgr->SendAccountSnapshot(messageToSend);
-
-    // todo
-    //if (!isSuccess)
-        //return AccountOpResult::AOR_DB_INTERNAL_ERROR;
-
-    // part 3: Saved the fact the message was sent
-    stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-    stmt->setString(0, username);
-    LoginDatabase.DirectExecute(stmt);
 
     return AccountOpResult::AOR_OK;                                          // everything's fine
 }

@@ -3,6 +3,9 @@
 #include "ShopMgr.h"
 #include <chrono>
 #include <iostream>
+#include <boost/tokenizer.hpp>
+#include <boost/algorithm/string/classification.hpp> // Include boost::for is_any_of
+#include <boost/algorithm/string/split.hpp> // Include for boost::split
 
 
 void EventCb::event_cb(RdKafka::Event &event) {
@@ -29,21 +32,35 @@ void EventCb::event_cb(RdKafka::Event &event) {
 
 void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
     std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
+    std::cout << message.err() << std::endl;
+    std::cout << message.topic_name() << std::endl;
 
     if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
 
-        //if (message.topic_name() == "ACCOUNT") {
-        //    std::string username = ParseAccountUsername(message.payload);
-        //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-        //    stmt->setString(0, username);
-        //    LoginDatabase.DirectExecute(stmt);
-        //} else if (message.topic_name() == "CHARACTER") {
+        if (message.topic_name() == "ACCOUNT_SNAPSHOT") { // @todo: replace topic names by constants
+            std::string payload = std::string(static_cast<const char *>(message.payload()));
+            std::cout << "Payload: " + payload << std::endl;
+            std::string username = GetUsernameFromAccountCreationEvent(payload);
+            std::cout << "username: " + username << std::endl;
+            PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
+            stmt->setString(0, username);
+            LoginDatabase.DirectExecute(stmt);
+        }
+        //else if (message.topic_name() == "CHARACTER") {
         //    std::string username = ParseAccountUsername(message.payload);
         //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
         //    stmt->setString(0, username);
         //    LoginDatabase.DirectExecute(stmt);
         //}
     }
+}
+
+std::string DeliveryReportCb::GetUsernameFromAccountCreationEvent(std::string payload)
+{
+    std::vector<std::string> words;
+    boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
+
+    return words[2];
 }
 
 
