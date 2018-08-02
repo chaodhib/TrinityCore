@@ -20,7 +20,6 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
-#include "MessagingMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Realm.h"
@@ -55,52 +54,20 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     Utf8ToUpperOnlyLatin(password);
     Utf8ToUpperOnlyLatin(email);
 
-    if (GetId(username) && IsSentToKafka(username))
+    if (GetId(username))
         return AccountOpResult::AOR_NAME_ALREADY_EXIST;                       // username does already exist
 
-    // part 1: Add row in account table
-    PreparedStatement* stmt = nullptr;
-    if (GetId(username) == 0)
-    {
-        TC_LOG_INFO("custom", "creation of new account. nominal case.");
+    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
 
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_ACCOUNT);
+    stmt->setString(0, username);
+    stmt->setString(1, CalculateShaPassHash(username, password));
+    stmt->setString(2, email);
+    stmt->setString(3, email);
 
-        stmt->setString(0, username);
-        stmt->setString(1, CalculateShaPassHash(username, password));
-        stmt->setString(2, email);
-        stmt->setString(3, email);
+    LoginDatabase.DirectExecute(stmt); // Enforce saving, otherwise AddGroup can fail
 
-        LoginDatabase.DirectExecute(stmt); // Enforce saving, otherwise AddGroup can fail
-
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
-        LoginDatabase.Execute(stmt);
-    }
-    else
-    {
-        TC_LOG_INFO("custom", "creation of new account. exception case. kafka sync previously failed.");
-
-        /*
-        this case should be extremly rare: when an insert 'account' succeded but sending the event to kafka failed because of a crash. in this case,
-        the caller needs to create the account again. in this case, he could use a different password & email.
-        */
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT);
-
-        stmt->setString(0, CalculateShaPassHash(username, password));
-        stmt->setString(1, email);
-        stmt->setString(2, email);
-        stmt->setString(3, username);
-
-        LoginDatabase.DirectExecute(stmt);
-
-        stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
-        LoginDatabase.Execute(stmt);
-    }
-
-    // part 2: Send to Kafka
-    uint32 accountId = GetId(username);
-    std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
-    sMessagingMgr->SendAccountSnapshot(messageToSend);
+    stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
+    LoginDatabase.Execute(stmt);
 
     return AccountOpResult::AOR_OK;                                          // everything's fine
 }
@@ -596,36 +563,6 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
     TC_LOG_DEBUG("rbac", "AccountMgr::HasPermission [AccountId: %u, PermissionId: %u, realmId: %d]: %u",
                    accountId, permissionId, realmId, hasPermission);
     return hasPermission;
-}
-
-bool AccountMgr::IsSentToKafka(std::string const & username)
-{
-    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_CHECK_ACCOUNT_KAFKA_OK);
-    stmt->setString(0, username);
-    PreparedQueryResult result = LoginDatabase.Query(stmt);
-    return (result) ? true : false;
-}
-
-std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
-{
-    std::string result;
-
-    // account id
-    result += std::to_string(accountId);
-    result += '#';
-
-    // timestamp
-    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    result += '#';
-
-    // username
-    result += username;
-    result += '#';
-
-    // hashedPassword
-    result += hashedPassword;
-
-    return result;
 }
 
 void AccountMgr::ClearRBAC()
