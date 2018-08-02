@@ -37,30 +37,38 @@ void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
 
     if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
 
+        std::string payload = std::string(static_cast<const char *>(message.payload()));
+        std::cout << "Payload: " + payload << std::endl;
+
         if (message.topic_name() == MessagingMgr::ACCOUNT_TOPIC) { // @todo: replace topic names by constants
-            std::string payload = std::string(static_cast<const char *>(message.payload()));
-            std::cout << "Payload: " + payload << std::endl;
-            std::string username = GetUsernameFromAccountCreationEvent(payload);
-            std::cout << "username: " + username << std::endl;
+            uint32 accountId = GetIdFromAccountEvent(payload);
             PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-            stmt->setString(0, username);
+            stmt->setUInt32(0, accountId);
             LoginDatabase.DirectExecute(stmt);
+
+        } else if (message.topic_name() == MessagingMgr::CHARACTER_TOPIC) {
+            uint32 characterId = GetIdFromCharacterEvent(payload);
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_KAFKA_OK);
+            stmt->setUInt32(0, characterId);
+            CharacterDatabase.DirectExecute(stmt);
         }
-        //else if (message.topic_name() == "CHARACTER") {
-        //    std::string username = ParseAccountUsername(message.payload);
-        //    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
-        //    stmt->setString(0, username);
-        //    LoginDatabase.DirectExecute(stmt);
-        //}
     }
 }
 
-std::string DeliveryReportCb::GetUsernameFromAccountCreationEvent(std::string payload)
+uint32 DeliveryReportCb::GetIdFromAccountEvent(std::string payload)
 {
     std::vector<std::string> words;
     boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
 
-    return words[2];
+    return atoul(words[0].c_str());
+}
+
+uint32 DeliveryReportCb::GetIdFromCharacterEvent(std::string payload)
+{
+    std::vector<std::string> words;
+    boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
+
+    return atoul(words[1].c_str());
 }
 
 static int verbosity = 3;

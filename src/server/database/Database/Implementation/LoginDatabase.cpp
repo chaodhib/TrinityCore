@@ -119,7 +119,7 @@ void LoginDatabaseConnection::DoPrepareStatements()
     PrepareStatement(LOGIN_INS_ACCOUNT_MUTE, "INSERT INTO account_muted VALUES (?, UNIX_TIMESTAMP(), ?, ?, ?)", CONNECTION_ASYNC);
     PrepareStatement(LOGIN_SEL_ACCOUNT_MUTE_INFO, "SELECT mutedate, mutetime, mutereason, mutedby FROM account_muted WHERE guid = ? ORDER BY mutedate ASC", CONNECTION_SYNCH);
     PrepareStatement(LOGIN_DEL_ACCOUNT_MUTED, "DELETE FROM account_muted WHERE guid = ?", CONNECTION_ASYNC);
-    PrepareStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK, "UPDATE account SET kafka_synced=1 WHERE username=?", CONNECTION_SYNCH);
+    PrepareStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK, "UPDATE account SET kafka_synced = 1 WHERE id = ?", CONNECTION_SYNCH);
     PrepareStatement(LOGIN_UPD_ACCOUNT, "UPDATE account SET sha_pass_hash=?, reg_mail=?, email=?, joindate=NOW() WHERE username=?", CONNECTION_SYNCH);
 }
 

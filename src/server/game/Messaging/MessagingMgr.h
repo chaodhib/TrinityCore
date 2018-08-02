@@ -13,7 +13,8 @@ public:
 class DeliveryReportCb : public RdKafka::DeliveryReportCb {
 public:
     void dr_cb(RdKafka::Message &message);
-    std::string GetUsernameFromAccountCreationEvent(std::string payload);
+    uint32 GetIdFromAccountEvent(std::string payload);
+    uint32 GetIdFromCharacterEvent(std::string payload);
 };
 
 class TC_GAME_API MessagingMgr

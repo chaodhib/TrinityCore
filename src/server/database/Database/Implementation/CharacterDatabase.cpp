@@ -617,6 +617,9 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     // Shop
     PrepareStatement(CHAR_INS_PROCESSED_ORDER, "INSERT INTO processed_shop_orders (id) VALUES (?)", CONNECTION_ASYNC);
     PrepareStatement(CHAR_SEL_PROCESSED_ORDER, "SELECT 1 FROM processed_shop_orders where id = ?", CONNECTION_SYNCH);
+
+    // Kafka
+    PrepareStatement(CHAR_UPD_CHARACTER_KAFKA_OK, "UPDATE character SET kafka_synced = 1 WHERE id = ?", CONNECTION_SYNCH);
 }
 
 CharacterDatabaseConnection::CharacterDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
