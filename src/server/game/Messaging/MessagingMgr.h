@@ -24,7 +24,7 @@ class TC_GAME_API MessagingMgr
 
         void InitProducer();
         void InitConsumer();
-        void InitGearTopic();
+        void InitGearSnapshotTopic();
         void InitAccountTopic();
         void InitCharacterTopic();
         void ConsumerSubscribe();
@@ -39,11 +39,16 @@ class TC_GAME_API MessagingMgr
         void SendCharacter(std::string message);
         void ConsumeGearPurchaseEvents();
 
+        static const std::string CHARACTER_TOPIC;
+        static const std::string ACCOUNT_TOPIC;
+        static const std::string GEAR_SNAPSHOT_TOPIC;
+        static const std::string GEAR_PURCHASE_TOPIC;
+
     private:
         RdKafka::Producer *producer;
         RdKafka::KafkaConsumer *consumer;
         RdKafka::Topic *accountTopic;
-        RdKafka::Topic *gearTopic;
+        RdKafka::Topic *gearSnapshotTopic;
         RdKafka::Topic *characterTopic;
         RdKafka::Topic *gearPurchaseTopic;
 

@@ -37,7 +37,7 @@ void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
 
     if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
 
-        if (message.topic_name() == "ACCOUNT_SNAPSHOT") { // @todo: replace topic names by constants
+        if (message.topic_name() == MessagingMgr::ACCOUNT_TOPIC) { // @todo: replace topic names by constants
             std::string payload = std::string(static_cast<const char *>(message.payload()));
             std::cout << "Payload: " + payload << std::endl;
             std::string username = GetUsernameFromAccountCreationEvent(payload);
@@ -63,8 +63,11 @@ std::string DeliveryReportCb::GetUsernameFromAccountCreationEvent(std::string pa
     return words[2];
 }
 
-
 static int verbosity = 3;
+const std::string MessagingMgr::CHARACTER_TOPIC     = "CHARACTER";
+const std::string MessagingMgr::ACCOUNT_TOPIC       = "ACCOUNT";
+const std::string MessagingMgr::GEAR_SNAPSHOT_TOPIC = "GEAR_SNAPSHOT";
+const std::string MessagingMgr::GEAR_PURCHASE_TOPIC = "GEAR_PURCHASE";
 
 void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
 
@@ -118,7 +121,7 @@ MessagingMgr::MessagingMgr()
 {
     InitProducer();
     InitConsumer();
-    InitGearTopic();
+    InitGearSnapshotTopic();
     InitAccountTopic();
     InitCharacterTopic();
     ConsumerSubscribe();
@@ -129,7 +132,7 @@ MessagingMgr::~MessagingMgr()
     consumer->close();
 
     delete accountTopic;
-    delete gearTopic;
+    delete gearSnapshotTopic;
     delete characterTopic;
     delete producer;
     delete consumer;
@@ -222,16 +225,15 @@ void MessagingMgr::ConsumerSubscribe()
     std::cout << "Consumer is now subscribed to topics" << std::endl;
 }
 
-void MessagingMgr::InitGearTopic()
+void MessagingMgr::InitGearSnapshotTopic()
 {
-    std::string topic_str = "GEAR_SNAPSHOT";
     std::string errstr;
 
     /*
     * Create topic handle.
     */
-    this->gearTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
-    if (!this->gearTopic) {
+    this->gearSnapshotTopic = RdKafka::Topic::create(producer, GEAR_SNAPSHOT_TOPIC, nullptr, errstr);
+    if (!this->gearSnapshotTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
     }
@@ -239,13 +241,12 @@ void MessagingMgr::InitGearTopic()
 
 void MessagingMgr::InitAccountTopic()
 {
-    std::string topic_str = "ACCOUNT_SNAPSHOT";
     std::string errstr;
 
     /*
     * Create topic handle.
     */
-    this->accountTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
+    this->accountTopic = RdKafka::Topic::create(producer, ACCOUNT_TOPIC, nullptr, errstr);
     if (!this->accountTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
@@ -254,13 +255,12 @@ void MessagingMgr::InitAccountTopic()
 
 void MessagingMgr::InitCharacterTopic()
 {
-    std::string topic_str = "CHARACTER";
     std::string errstr;
 
     /*
     * Create topic handle.
     */
-    this->characterTopic = RdKafka::Topic::create(producer, topic_str, nullptr, errstr);
+    this->characterTopic = RdKafka::Topic::create(producer, CHARACTER_TOPIC, nullptr, errstr);
     if (!this->characterTopic) {
         std::cerr << "Failed to create topic: " << errstr << std::endl;
         exit(1);
@@ -269,7 +269,7 @@ void MessagingMgr::InitCharacterTopic()
 
 void MessagingMgr::SendGearSnapshot(std::string message)
 {
-    RdKafka::ErrorCode resp = producer->produce(this->gearTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
+    RdKafka::ErrorCode resp = producer->produce(this->gearSnapshotTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else
