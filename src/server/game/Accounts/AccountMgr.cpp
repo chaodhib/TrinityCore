@@ -20,6 +20,7 @@
 #include "Config.h"
 #include "DatabaseEnv.h"
 #include "Log.h"
+#include "MessagingMgr.h"
 #include "ObjectAccessor.h"
 #include "Player.h"
 #include "Realm.h"
@@ -68,6 +69,11 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
 
     stmt = LoginDatabase.GetPreparedStatement(LOGIN_INS_REALM_CHARACTERS_INIT);
     LoginDatabase.Execute(stmt);
+
+    // Send to Kafka
+    uint32 accountId = GetId(username);
+    std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
+    sMessagingMgr->SendAccountSnapshot(messageToSend);
 
     return AccountOpResult::AOR_OK;                                          // everything's fine
 }
@@ -564,6 +570,29 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
                    accountId, permissionId, realmId, hasPermission);
     return hasPermission;
 }
+
+std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
+{
+    std::string result;
+
+    // account id
+    result += std::to_string(accountId);
+    result += '#';
+
+    // timestamp
+    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    result += '#';
+
+    // username
+    result += username;
+    result += '#';
+
+    // hashedPassword
+    result += hashedPassword;
+
+    return result;
+}
+
 
 void AccountMgr::ClearRBAC()
 {
