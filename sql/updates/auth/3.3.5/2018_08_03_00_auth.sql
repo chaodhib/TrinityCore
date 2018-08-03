@@ -1,0 +1,1 @@
+ALTER TABLE `account` ADD COLUMN `kafka_synced` BIT(1) NOT NULL DEFAULT 0;
