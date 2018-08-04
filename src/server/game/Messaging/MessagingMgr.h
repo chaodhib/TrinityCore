@@ -35,6 +35,8 @@ class TC_GAME_API MessagingMgr
         void InitCharacterTopic();
         void ConsumerSubscribe();
 
+        std::string ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const;
+
         void HandleGearPurchaseMessage(RdKafka::Message &msg);
         void SyncAccounts();
         void SyncCharactes();
@@ -44,7 +46,7 @@ class TC_GAME_API MessagingMgr
         static MessagingMgr* instance();
         void Update(uint32 diff);
         void SendGearSnapshot(std::string message);
-        void SendAccountSnapshot(std::string message);
+        void SendAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword);
         void SendCharacter(std::string message);
         void ConsumeGearPurchaseEvents();
 

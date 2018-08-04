@@ -90,7 +90,6 @@ class TC_GAME_API AccountMgr
         rbac::RBACPermissionContainer const& GetRBACDefaultPermissions(uint8 secLevel);
 
     private:
-        std::string ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const;
         void ClearRBAC();
         rbac::RBACPermissionsContainer _permissions;
         rbac::RBACDefaultPermissionsContainer _defaultPermissions;

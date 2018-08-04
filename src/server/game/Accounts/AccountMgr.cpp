@@ -71,9 +71,7 @@ AccountOpResult AccountMgr::CreateAccount(std::string username, std::string pass
     LoginDatabase.Execute(stmt);
 
     // Send to Kafka
-    uint32 accountId = GetId(username);
-    std::string messageToSend = ConstructAccountSnapshot(accountId, username, CalculateShaPassHash(username, password));
-    sMessagingMgr->SendAccountSnapshot(messageToSend);
+    sMessagingMgr->SendAccountSnapshot(GetId(username), username, CalculateShaPassHash(username, password));
 
     return AccountOpResult::AOR_OK;                                          // everything's fine
 }
@@ -570,25 +568,6 @@ bool AccountMgr::HasPermission(uint32 accountId, uint32 permissionId, uint32 rea
                    accountId, permissionId, realmId, hasPermission);
     return hasPermission;
 }
-
-std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
-{
-    std::string result;
-
-    // account id
-    result += std::to_string(accountId);
-    result += '#';
-
-    // username
-    result += username;
-    result += '#';
-
-    // hashedPassword
-    result += hashedPassword;
-
-    return result;
-}
-
 
 void AccountMgr::ClearRBAC()
 {

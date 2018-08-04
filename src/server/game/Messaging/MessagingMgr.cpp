@@ -169,7 +169,22 @@ void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
 
 void MessagingMgr::SyncAccounts()
 {
+    PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_SEL_ACCOUNT_KAFKA_PENDING); // todo: add pagination to the query. to limit size of the ResultSet
+    PreparedQueryResult result = LoginDatabase.Query(stmt);
 
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            uint32 accountId = fields[0].GetUInt32();
+            std::string username = fields[1].GetString();
+            std::string hashedPassword = fields[2].GetString();
+
+            SendAccountSnapshot(accountId, username, hashedPassword);
+
+        } while (result->NextRow());
+    }
 }
 
 void MessagingMgr::SyncCharactes()
@@ -325,6 +340,24 @@ void MessagingMgr::InitCharacterTopic()
     }
 }
 
+std::string MessagingMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
+{
+    std::string result;
+
+    // account id
+    result += std::to_string(accountId);
+    result += '#';
+
+    // username
+    result += username;
+    result += '#';
+
+    // hashedPassword
+    result += hashedPassword;
+
+    return result;
+}
+
 void MessagingMgr::SendGearSnapshot(std::string message)
 {
     RdKafka::ErrorCode resp = producer->produce(this->gearSnapshotTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
@@ -334,8 +367,9 @@ void MessagingMgr::SendGearSnapshot(std::string message)
         std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
 }
 
-void MessagingMgr::SendAccountSnapshot(std::string message)
+void MessagingMgr::SendAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword)
 {
+    std::string message = ConstructAccountSnapshot(accountId, username, hashedPassword);
     RdKafka::ErrorCode resp = producer->produce(this->accountTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
