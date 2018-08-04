@@ -18,6 +18,10 @@ public:
     uint32 GetIdFromGearSnapshotEvent(std::string payload);
 };
 
+class OffsetCommitCb : public RdKafka::OffsetCommitCb {
+    void offset_commit_cb(RdKafka::ErrorCode err, std::vector<RdKafka::TopicPartition*>&offsets);
+};
+
 class TC_GAME_API MessagingMgr
 {
     private:
@@ -56,6 +60,7 @@ class TC_GAME_API MessagingMgr
 
         DeliveryReportCb dr_cb;
         EventCb event_cb;
+        OffsetCommitCb commit_cb;
 };
 
 #define sMessagingMgr MessagingMgr::instance()

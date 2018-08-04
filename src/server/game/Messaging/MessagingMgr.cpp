@@ -7,6 +7,11 @@
 #include <boost/algorithm/string/classification.hpp> // Include boost::for is_any_of
 #include <boost/algorithm/string/split.hpp> // Include for boost::split
 
+static int verbosity = 3;
+const std::string MessagingMgr::CHARACTER_TOPIC = "CHARACTER";
+const std::string MessagingMgr::ACCOUNT_TOPIC = "ACCOUNT";
+const std::string MessagingMgr::GEAR_SNAPSHOT_TOPIC = "GEAR_SNAPSHOT";
+const std::string MessagingMgr::GEAR_PURCHASE_TOPIC = "GEAR_PURCHASE";
 
 void EventCb::event_cb(RdKafka::Event &event) {
     switch (event.type())
@@ -84,11 +89,35 @@ uint32 DeliveryReportCb::GetIdFromGearSnapshotEvent(std::string payload)
     return atoul(words[0].c_str());
 }
 
-static int verbosity = 3;
-const std::string MessagingMgr::CHARACTER_TOPIC     = "CHARACTER";
-const std::string MessagingMgr::ACCOUNT_TOPIC       = "ACCOUNT";
-const std::string MessagingMgr::GEAR_SNAPSHOT_TOPIC = "GEAR_SNAPSHOT";
-const std::string MessagingMgr::GEAR_PURCHASE_TOPIC = "GEAR_PURCHASE";
+void OffsetCommitCb::offset_commit_cb(RdKafka::ErrorCode err, std::vector<RdKafka::TopicPartition*>& offsets)
+{
+    std::cerr << "Propagate offset for " << offsets.size() << " partitions, error: " << RdKafka::err2str(err) << std::endl;
+
+    /* No offsets to commit, dont report anything. */
+    if (err == RdKafka::ERR__NO_OFFSET)
+        return;
+
+    /* Send up-to-date records_consumed report to make sure consumed > committed */
+
+    std::cout << "{ " <<
+        "\"name\": \"offsets_committed\", " <<
+        "\"success\": " << (err ? "false" : "true") << ", " <<
+        "\"error\": \"" << (err ? RdKafka::err2str(err) : "") << "\", " <<
+        "\"offsets\": [ ";
+    assert(offsets.size() > 0);
+    for (unsigned int i = 0; i < offsets.size(); i++) {
+        std::cout << (i == 0 ? "" : ", ") << "{ " <<
+            " \"topic\": \"" << offsets[i]->topic() << "\", " <<
+            " \"partition\": " << offsets[i]->partition() << ", " <<
+            " \"offset\": " << (int)offsets[i]->offset() << ", " <<
+            " \"error\": \"" <<
+            (offsets[i]->err() ? RdKafka::err2str(offsets[i]->err()) : "") <<
+            "\" " <<
+            " }";
+    }
+    std::cout << " ] }" << std::endl;
+
+}
 
 void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
 
@@ -198,12 +227,7 @@ void MessagingMgr::InitConsumer()
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
 
     conf->set("metadata.broker.list", brokers, errstr);
-
-    if (conf->set("auto.commit.interval.ms", "30000", errstr) != RdKafka::Conf::CONF_OK) {
-        std::cerr << errstr << std::endl;
-        exit(1);
-    }
-
+    conf->set("offset_commit_cb", &commit_cb, errstr);
     conf->set("event_cb", &event_cb, errstr);
     conf->set("auto.offset.reset", "earliest", errstr);
 
