@@ -23,67 +23,8 @@ ShopMgr* ShopMgr::instance()
     return &instance;
 }
 
-/*
-proper format is ${ITEM_ENTRY_ID}:${QUANTITY}
-*/
-bool ShopMgr::IsValidItemQuantityEntry(const std::string st)
+bool ShopMgr::HandlePurchaseOrder(uint32 &orderId, uint32 &characterId, std::list<std::pair<uint32, uint32>> &itemQuantityList)
 {
-    std::vector<std::string> words;
-    boost::split(words, st, boost::is_any_of(":"), boost::token_compress_on);
-    if (words.size() != 2)
-        return false;
-
-    return atoul(words[0].c_str()) != 0 && atoul(words[1].c_str()) != 0;
-}
-
-std::pair<uint32, uint32> ShopMgr::ParseItemQuantityMapEntry(const std::string st)
-{
-    std::vector<std::string> words;
-    boost::split(words, st, boost::is_any_of(":"), boost::token_compress_on);
-
-    return std::pair<uint32, uint32>(atoul(words[0].c_str()), atoul(words[1].c_str()));
-}
-
-bool ShopMgr::HandlePurchaseOrder(std::string order)
-{
-    std::vector<std::string> tokens;
-    boost::split(tokens, order, boost::is_any_of("#"), boost::token_compress_on);
-
-    uint32 orderId;
-    uint32 characterId;
-    std::list<std::pair<uint32, uint32> > itemQuantityList;
-
-    if(tokens.size() < 3 || tokens.size() > 102) // allow for maximum 100 stacks of items.
-    {
-        std::cerr << "too few or too many arguments in ShopMgr::HandlePurchaseOrder" << std::endl;
-        return false;
-    }
-
-    orderId = atoul(tokens[0].c_str());
-    if (orderId == 0)
-    {
-        std::cerr << "invalid orderId in ShopMgr::HandlePurchaseOrder" << std::endl;
-        return false;
-    }
-
-    characterId = atoul(tokens[1].c_str());
-    if (characterId == 0)
-    {
-        std::cerr << "invalid characterId in ShopMgr::HandlePurchaseOrder" << std::endl;
-        return false;
-    }
-
-    for (int i = 2; i < tokens.size(); i++)
-    {
-        if (IsValidItemQuantityEntry(tokens[i]))
-            itemQuantityList.push_back(ParseItemQuantityMapEntry(tokens[i]));
-        else
-        {
-            std::cerr << "invalid input for items in ShopMgr::HandlePurchaseOrder" << std::endl;
-            return false;
-        }
-    }
-
     std::cout << "Handle order" << std::endl;
     std::cout << "orderId: " << orderId << std::endl;
     std::cout << "characterId: " << characterId << std::endl;

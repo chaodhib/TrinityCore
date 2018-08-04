@@ -12,6 +12,7 @@ const std::string MessagingMgr::CHARACTER_TOPIC = "CHARACTER";
 const std::string MessagingMgr::ACCOUNT_TOPIC = "ACCOUNT";
 const std::string MessagingMgr::GEAR_SNAPSHOT_TOPIC = "GEAR_SNAPSHOT";
 const std::string MessagingMgr::GEAR_PURCHASE_TOPIC = "GEAR_PURCHASE";
+const std::string MessagingMgr::GEAR_PURCHASE_ACK_TOPIC = "GEAR_PURCHASE_ACK";
 
 void EventCb::event_cb(RdKafka::Event &event) {
     switch (event.type())
@@ -46,26 +47,33 @@ void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
         std::cout << "Payload: " + payload << std::endl;
 
         if (message.topic_name() == MessagingMgr::ACCOUNT_TOPIC) {
-            uint32 accountId = GetIdFromAccountEvent(payload);
+            uint32 accountId = GetFirstParam(payload);
             PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
             stmt->setUInt32(0, accountId);
             LoginDatabase.DirectExecute(stmt);
 
         } else if (message.topic_name() == MessagingMgr::CHARACTER_TOPIC) {
-            uint32 characterId = GetIdFromCharacterEvent(payload);
+            uint32 characterId = GetSecondParam(payload);
             PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_KAFKA_OK);
             stmt->setUInt32(0, characterId);
             CharacterDatabase.DirectExecute(stmt);
+
         } else if (message.topic_name() == MessagingMgr::GEAR_SNAPSHOT_TOPIC) {
-            uint32 characterId = GetIdFromGearSnapshotEvent(payload);
+            uint32 characterId = GetFirstParam(payload);
             PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_OK);
             stmt->setUInt32(0, characterId);
+            CharacterDatabase.DirectExecute(stmt);
+
+        } else if (message.topic_name() == MessagingMgr::GEAR_PURCHASE_ACK_TOPIC) {
+            uint32 orderId = GetFirstParam(payload);
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_PROCESSED_SHOP_ORDERS_KAFKA_OK);
+            stmt->setUInt32(0, orderId);
             CharacterDatabase.DirectExecute(stmt);
         }
     }
 }
 
-uint32 DeliveryReportCb::GetIdFromAccountEvent(std::string payload)
+uint32 DeliveryReportCb::GetFirstParam(std::string payload)
 {
     std::vector<std::string> words;
     boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
@@ -73,20 +81,12 @@ uint32 DeliveryReportCb::GetIdFromAccountEvent(std::string payload)
     return atoul(words[0].c_str());
 }
 
-uint32 DeliveryReportCb::GetIdFromCharacterEvent(std::string payload)
+uint32 DeliveryReportCb::GetSecondParam(std::string payload)
 {
     std::vector<std::string> words;
     boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
 
     return atoul(words[1].c_str());
-}
-
-uint32 DeliveryReportCb::GetIdFromGearSnapshotEvent(std::string payload)
-{
-    std::vector<std::string> words;
-    boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
-
-    return atoul(words[0].c_str());
 }
 
 void OffsetCommitCb::offset_commit_cb(RdKafka::ErrorCode err, std::vector<RdKafka::TopicPartition*>& offsets)
@@ -119,51 +119,125 @@ void OffsetCommitCb::offset_commit_cb(RdKafka::ErrorCode err, std::vector<RdKafk
 
 }
 
-void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
+/*
+proper format is ${ITEM_ENTRY_ID}:${QUANTITY}
+*/
+bool MessagingMgr::IsValidItemQuantityEntry(const std::string st)
+{
+    std::vector<std::string> words;
+    boost::split(words, st, boost::is_any_of(":"), boost::token_compress_on);
+    if (words.size() != 2)
+        return false;
+
+    return atoul(words[0].c_str()) != 0 && atoul(words[1].c_str()) != 0;
+}
+
+std::pair<uint32, uint32> MessagingMgr::ParseItemQuantityMapEntry(const std::string st)
+{
+    std::vector<std::string> words;
+    boost::split(words, st, boost::is_any_of(":"), boost::token_compress_on);
+
+    return std::pair<uint32, uint32>(atoul(words[0].c_str()), atoul(words[1].c_str()));
+}
+
+bool MessagingMgr::ParseGearPurchaseMessage(std::string message, uint32 &orderId, uint32 &characterId, std::list<std::pair<uint32, uint32>> &itemQuantityList)
+{
+    std::vector<std::string> tokens;
+    boost::split(tokens, message, boost::is_any_of("#"), boost::token_compress_on);
+
+    if (tokens.size() < 3 || tokens.size() > 102) // allow for maximum 100 stacks of items.
+    {
+        std::cerr << "too few or too many arguments in MessagingMgr::ParseGearPurchaseMessage" << std::endl;
+        return false;
+    }
+
+    orderId = atoul(tokens[0].c_str());
+    if (orderId == 0)
+    {
+        std::cerr << "invalid orderId in MessagingMgr::ParseGearPurchaseMessage" << std::endl;
+        return false;
+    }
+
+    characterId = atoul(tokens[1].c_str());
+    if (characterId == 0)
+    {
+        std::cerr << "invalid characterId in MessagingMgr::ParseGearPurchaseMessage" << std::endl;
+        return false;
+    }
+
+    for (int i = 2; i < tokens.size(); i++)
+    {
+        if (IsValidItemQuantityEntry(tokens[i]))
+            itemQuantityList.push_back(ParseItemQuantityMapEntry(tokens[i]));
+        else
+        {
+            std::cerr << "invalid input for items in MessagingMgr::ParseGearPurchaseMessage" << std::endl;
+            return false;
+        }
+    }
+
+    return true;
+}
+
+void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg)
+{
+    uint32 orderId;
+    uint32 characterId;
+    std::list<std::pair<uint32, uint32> > itemQuantityList;
+    bool success;
+    bool parseSuccess;
 
     switch (msg.err()) {
-    case RdKafka::ERR__TIMED_OUT:
-        break;
+        case RdKafka::ERR__TIMED_OUT:
+            break;
 
-    case RdKafka::ERR_NO_ERROR:
-        /* Real message */
-        if (verbosity >= 3)
-            std::cerr << "Read msg at offset " << msg.offset() << std::endl;
-        RdKafka::MessageTimestamp ts;
-        ts = msg.timestamp();
-        if (verbosity >= 2 &&
-            ts.type != RdKafka::MessageTimestamp::MSG_TIMESTAMP_NOT_AVAILABLE) {
-            std::string tsname = "?";
-            if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_CREATE_TIME)
-                tsname = "create time";
-            else if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_LOG_APPEND_TIME)
-                tsname = "log append time";
-            std::cout << "Timestamp: " << tsname << " " << ts.timestamp << std::endl;
-        }
-        if (verbosity >= 2 && msg.key()) {
-            std::cout << "Key: " << *msg.key() << std::endl;
-        }
-        if (verbosity >= 1) {
-            printf("%.*s\n",
-                static_cast<int>(msg.len()),
-                static_cast<const char *>(msg.payload()));
-        }
+        case RdKafka::ERR_NO_ERROR:
+            /* Real message */
+            if (verbosity >= 3)
+                std::cerr << "Read msg at offset " << msg.offset() << std::endl;
+            RdKafka::MessageTimestamp ts;
+            ts = msg.timestamp();
+            if (verbosity >= 2 &&
+                ts.type != RdKafka::MessageTimestamp::MSG_TIMESTAMP_NOT_AVAILABLE) {
+                std::string tsname = "?";
+                if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_CREATE_TIME)
+                    tsname = "create time";
+                else if (ts.type == RdKafka::MessageTimestamp::MSG_TIMESTAMP_LOG_APPEND_TIME)
+                    tsname = "log append time";
+                std::cout << "Timestamp: " << tsname << " " << ts.timestamp << std::endl;
+            }
+            if (verbosity >= 2 && msg.key()) {
+                std::cout << "Key: " << *msg.key() << std::endl;
+            }
+            if (verbosity >= 1) {
+                printf("%.*s\n",
+                    static_cast<int>(msg.len()),
+                    static_cast<const char *>(msg.payload()));
+            }
 
-        sShopMgr->HandlePurchaseOrder(std::string(static_cast<const char *>(msg.payload())));
+            parseSuccess = ParseGearPurchaseMessage(std::string(static_cast<const char *>(msg.payload())), orderId, characterId, itemQuantityList);
+            if (!parseSuccess)
+            {
+                std::cout << "ignoring gear purchase message. invalid format." << std::endl;
+                break;
+            }
 
-        break;
+            success = sShopMgr->HandlePurchaseOrder(orderId, characterId, itemQuantityList);
+            SendGearPurchaseAck(orderId, success);
 
-    case RdKafka::ERR__PARTITION_EOF:
-        break;
+            break;
 
-    case RdKafka::ERR__UNKNOWN_TOPIC:
-    case RdKafka::ERR__UNKNOWN_PARTITION:
-        std::cerr << "Consume failed: " << msg.errstr() << std::endl;
-        break;
+        case RdKafka::ERR__PARTITION_EOF:
+            break;
 
-    default:
-        /* Errors */
-        std::cerr << "Consume failed: " << msg.errstr() << std::endl;
+        case RdKafka::ERR__UNKNOWN_TOPIC:
+        case RdKafka::ERR__UNKNOWN_PARTITION:
+            std::cerr << "Consume failed: " << msg.errstr() << std::endl;
+            break;
+
+        default:
+            /* Errors */
+            std::cerr << "Consume failed: " << msg.errstr() << std::endl;
     }
 }
 
@@ -210,6 +284,41 @@ void MessagingMgr::SyncCharactes()
 
 void MessagingMgr::SyncGearSnapshots()
 {
+    //PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_GEAR_KAFKA_PENDING); // todo: add pagination to the query. to limit size of the ResultSet
+    //PreparedQueryResult result = CharacterDatabase.Query(stmt);
+
+    //if (result)
+    //{
+    //    do
+    //    {
+    //        Field* fields = result->Fetch();
+    //        uint32 characterId = fields[0].GetUInt32();
+    //        uint32 accountId = fields[1].GetUInt32();
+    //        std::string characterName = fields[2].GetString();
+    //        uint8 characterClass = fields[3].GetInt8();
+
+    //        SendCharacter(characterId, accountId, characterName, characterClass);
+
+    //    } while (result->NextRow());
+    //}
+}
+
+void MessagingMgr::SyncGearPurchaseAcks()
+{
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_PROCESSED_SHOP_ORDERS_KAFKA_PENDING); // todo: add pagination to the query. to limit size of the ResultSet
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            uint32 orderId = fields[0].GetUInt32();
+
+            SendGearPurchaseAck(orderId, true);
+
+        } while (result->NextRow());
+    }
 }
 
 MessagingMgr::MessagingMgr()
@@ -219,6 +328,7 @@ MessagingMgr::MessagingMgr()
     InitGearSnapshotTopic();
     InitAccountTopic();
     InitCharacterTopic();
+    InitGearPurchaseAckTopic();
     ConsumerSubscribe();
 }
 
@@ -357,6 +467,20 @@ void MessagingMgr::InitCharacterTopic()
     }
 }
 
+void MessagingMgr::InitGearPurchaseAckTopic()
+{
+    std::string errstr;
+
+    /*
+    * Create topic handle.
+    */
+    this->gearPurchaseAckTopic = RdKafka::Topic::create(producer, GEAR_PURCHASE_ACK_TOPIC, nullptr, errstr);
+    if (!this->gearPurchaseAckTopic) {
+        std::cerr << "Failed to create topic: " << errstr << std::endl;
+        exit(1);
+    }
+}
+
 std::string MessagingMgr::ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const
 {
     std::string result;
@@ -399,6 +523,17 @@ void MessagingMgr::SendCharacter(uint32 accountId, uint32 characterId, std::stri
     std::string message = std::to_string(accountId) + '#' + std::to_string(characterId) + '#' + characterName + '#' + std::to_string(characterClass);
 
     RdKafka::ErrorCode resp = producer->produce(this->characterTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
+    if (resp != RdKafka::ERR_NO_ERROR)
+        std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
+    else
+        std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
+}
+
+void MessagingMgr::SendGearPurchaseAck(uint32 orderId, bool success)
+{
+    std::string message = std::to_string(orderId) + '#' + (success ? "true" : "false");
+
+    RdKafka::ErrorCode resp = producer->produce(this->gearPurchaseAckTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;
     else

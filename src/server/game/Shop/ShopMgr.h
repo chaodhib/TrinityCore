@@ -9,16 +9,10 @@ class TC_GAME_API ShopMgr
     private:
         ShopMgr();
         ~ShopMgr();
-        std::pair<uint32, uint32> ParseItemQuantityMapEntry(const std::string st);
-        bool IsValidItemQuantityEntry(const std::string st);
-
 
     public:
         static ShopMgr* instance();
-        bool HandlePurchaseOrder(std::string order);
-
-
-
+        bool HandlePurchaseOrder(uint32 &orderId, uint32 &characterId, std::list<std::pair<uint32, uint32> > &itemQuantityList);
 };
 
 #define sShopMgr ShopMgr::instance()

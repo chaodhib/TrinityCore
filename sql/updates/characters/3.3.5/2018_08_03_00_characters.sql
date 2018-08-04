@@ -5,3 +5,4 @@ CREATE TABLE `processed_shop_orders` (
 
 ALTER TABLE `characters` ADD COLUMN `kafka_synced` BIT(1) NOT NULL DEFAULT 0;
 ALTER TABLE `characters` ADD COLUMN `gear_kafka_synced` BIT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `processed_shop_orders` ADD COLUMN `ack_kafka_synced` BIT(1) NOT NULL DEFAULT 0;
