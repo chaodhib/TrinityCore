@@ -47,7 +47,7 @@ class TC_GAME_API MessagingMgr
         void Update(uint32 diff);
         void SendGearSnapshot(std::string message);
         void SendAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword);
-        void SendCharacter(std::string message);
+        void SendCharacter(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass);
         void ConsumeGearPurchaseEvents();
 
         void ResyncMessages();

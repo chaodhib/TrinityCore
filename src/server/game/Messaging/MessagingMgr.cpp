@@ -189,6 +189,23 @@ void MessagingMgr::SyncAccounts()
 
 void MessagingMgr::SyncCharactes()
 {
+    PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_SEL_CHARACTER_KAFKA_PENDING); // todo: add pagination to the query. to limit size of the ResultSet
+    PreparedQueryResult result = CharacterDatabase.Query(stmt);
+
+    if (result)
+    {
+        do
+        {
+            Field* fields = result->Fetch();
+            uint32 characterId = fields[0].GetUInt32();
+            uint32 accountId = fields[1].GetUInt32();
+            std::string characterName = fields[2].GetString();
+            uint8 characterClass = fields[3].GetInt8();
+
+            SendCharacter(accountId, characterId, characterName, characterClass);
+
+        } while (result->NextRow());
+    }
 }
 
 void MessagingMgr::SyncGearSnapshots()
@@ -377,8 +394,10 @@ void MessagingMgr::SendAccountSnapshot(uint32 accountId, std::string username, s
         std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
 }
 
-void MessagingMgr::SendCharacter(std::string message)
+void MessagingMgr::SendCharacter(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass)
 {
+    std::string message = std::to_string(accountId) + '#' + std::to_string(characterId) + '#' + characterName + '#' + std::to_string(characterClass);
+
     RdKafka::ErrorCode resp = producer->produce(this->characterTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
         std::cerr << "% Produce failed: " << RdKafka::err2str(resp) << std::endl;

@@ -622,6 +622,9 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_UPD_CHARACTER_KAFKA_OK, "UPDATE characters SET kafka_synced = 1 WHERE guid = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_OK, "UPDATE characters SET gear_kafka_synced = 1 WHERE guid = ?", CONNECTION_SYNCH);
     PrepareStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_NOT_OK, "UPDATE characters SET gear_kafka_synced = 0 WHERE guid = ?", CONNECTION_SYNCH);
+
+    PrepareStatement(CHAR_SEL_CHARACTER_KAFKA_PENDING, "SELECT guid, account, name, class FROM characters where kafka_synced = 0;", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_SEL_CHARACTER_GEAR_KAFKA_PENDING, "SELECT guid, account, name, class FROM characters where gear_kafka_synced = 0;", CONNECTION_SYNCH);
 }
 
 CharacterDatabaseConnection::CharacterDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)
