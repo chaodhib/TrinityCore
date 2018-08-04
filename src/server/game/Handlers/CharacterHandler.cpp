@@ -836,6 +836,11 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder* holder)
 
     LoginDatabase.Execute(stmt);
 
+    // unset the gear kafka synced flag to signal that the character's gear may be unsynced with kafka now that the player is online
+    stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_NOT_OK);
+    stmt->setUInt32(0, pCurrChar->GetGUID().GetCounter());
+    CharacterDatabase.DirectExecute(stmt);
+
     pCurrChar->SetInGameTime(GameTime::GetGameTimeMS());
 
     // announce group about member online (must be after add to player list to receive announce to self)

@@ -619,7 +619,9 @@ void CharacterDatabaseConnection::DoPrepareStatements()
     PrepareStatement(CHAR_SEL_PROCESSED_ORDER, "SELECT 1 FROM processed_shop_orders where id = ?", CONNECTION_SYNCH);
 
     // Kafka
-    PrepareStatement(CHAR_UPD_CHARACTER_KAFKA_OK, "UPDATE character SET kafka_synced = 1 WHERE id = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_UPD_CHARACTER_KAFKA_OK, "UPDATE characters SET kafka_synced = 1 WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_OK, "UPDATE characters SET gear_kafka_synced = 1 WHERE guid = ?", CONNECTION_SYNCH);
+    PrepareStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_NOT_OK, "UPDATE characters SET gear_kafka_synced = 0 WHERE guid = ?", CONNECTION_SYNCH);
 }
 
 CharacterDatabaseConnection::CharacterDatabaseConnection(MySQLConnectionInfo& connInfo) : MySQLConnection(connInfo)

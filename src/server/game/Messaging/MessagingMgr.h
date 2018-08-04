@@ -15,6 +15,7 @@ public:
     void dr_cb(RdKafka::Message &message);
     uint32 GetIdFromAccountEvent(std::string payload);
     uint32 GetIdFromCharacterEvent(std::string payload);
+    uint32 GetIdFromGearSnapshotEvent(std::string payload);
 };
 
 class TC_GAME_API MessagingMgr

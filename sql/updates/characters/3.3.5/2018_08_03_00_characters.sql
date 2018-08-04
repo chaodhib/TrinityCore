@@ -4,3 +4,4 @@ CREATE TABLE `processed_shop_orders` (
   UNIQUE INDEX `id_UNIQUE` (`id` ASC));
 
 ALTER TABLE `characters` ADD COLUMN `kafka_synced` BIT(1) NOT NULL DEFAULT 0;
+ALTER TABLE `characters` ADD COLUMN `gear_kafka_synced` BIT(1) NOT NULL DEFAULT 0;

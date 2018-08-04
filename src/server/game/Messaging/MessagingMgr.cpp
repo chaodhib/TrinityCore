@@ -40,7 +40,7 @@ void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
         std::string payload = std::string(static_cast<const char *>(message.payload()));
         std::cout << "Payload: " + payload << std::endl;
 
-        if (message.topic_name() == MessagingMgr::ACCOUNT_TOPIC) { // @todo: replace topic names by constants
+        if (message.topic_name() == MessagingMgr::ACCOUNT_TOPIC) {
             uint32 accountId = GetIdFromAccountEvent(payload);
             PreparedStatement* stmt = LoginDatabase.GetPreparedStatement(LOGIN_UPD_ACCOUNT_KAFKA_OK);
             stmt->setUInt32(0, accountId);
@@ -49,6 +49,11 @@ void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
         } else if (message.topic_name() == MessagingMgr::CHARACTER_TOPIC) {
             uint32 characterId = GetIdFromCharacterEvent(payload);
             PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_KAFKA_OK);
+            stmt->setUInt32(0, characterId);
+            CharacterDatabase.DirectExecute(stmt);
+        } else if (message.topic_name() == MessagingMgr::GEAR_SNAPSHOT_TOPIC) {
+            uint32 characterId = GetIdFromGearSnapshotEvent(payload);
+            PreparedStatement* stmt = CharacterDatabase.GetPreparedStatement(CHAR_UPD_CHARACTER_GEAR_KAFKA_OK);
             stmt->setUInt32(0, characterId);
             CharacterDatabase.DirectExecute(stmt);
         }
@@ -69,6 +74,14 @@ uint32 DeliveryReportCb::GetIdFromCharacterEvent(std::string payload)
     boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
 
     return atoul(words[1].c_str());
+}
+
+uint32 DeliveryReportCb::GetIdFromGearSnapshotEvent(std::string payload)
+{
+    std::vector<std::string> words;
+    boost::split(words, payload, boost::is_any_of("#"), boost::token_compress_on);
+
+    return atoul(words[0].c_str());
 }
 
 static int verbosity = 3;
