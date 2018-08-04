@@ -46,38 +46,42 @@ std::pair<uint32, uint32> ShopMgr::ParseItemQuantityMapEntry(const std::string s
 
 bool ShopMgr::HandlePurchaseOrder(std::string order)
 {
-    boost::char_separator<char> sep("#");
-    boost::tokenizer<boost::char_separator<char>> tokens(order, sep);
-    int i = 1;
+    std::vector<std::string> tokens;
+    boost::split(tokens, order, boost::is_any_of("#"), boost::token_compress_on);
+
     uint32 orderId;
     uint32 characterId;
     std::list<std::pair<uint32, uint32> > itemQuantityList;
-    for (const auto& t : tokens) {
-        if (i > 102)
+
+    if(tokens.size() < 3 || tokens.size() > 102) // allow for maximum 100 stacks of items.
+    {
+        std::cerr << "too few or too many arguments in ShopMgr::HandlePurchaseOrder" << std::endl;
+        return false;
+    }
+
+    orderId = atoul(tokens[0].c_str());
+    if (orderId == 0)
+    {
+        std::cerr << "invalid orderId in ShopMgr::HandlePurchaseOrder" << std::endl;
+        return false;
+    }
+
+    characterId = atoul(tokens[1].c_str());
+    if (characterId == 0)
+    {
+        std::cerr << "invalid characterId in ShopMgr::HandlePurchaseOrder" << std::endl;
+        return false;
+    }
+
+    for (int i = 2; i < tokens.size(); i++)
+    {
+        if (IsValidItemQuantityEntry(tokens[i]))
+            itemQuantityList.push_back(ParseItemQuantityMapEntry(tokens[i]));
+        else
         {
-            std::cerr << "too many arguments in ShopMgr::HandlePurchaseOrder" << std::endl; // allow for maximum 100 stacks of items.
+            std::cerr << "invalid input for items in ShopMgr::HandlePurchaseOrder" << std::endl;
             return false;
         }
-
-        switch (i)
-        {
-            case 1:
-                orderId = atoul(t.c_str());
-                break;
-            case 2:
-                characterId = atoul(t.c_str());
-                break;
-            default:
-                if(IsValidItemQuantityEntry(t))
-                    itemQuantityList.push_back(ParseItemQuantityMapEntry(t));
-                else
-                {
-                    std::cerr << "invalid input for items in ShopMgr::HandlePurchaseOrder" << std::endl;
-                    return false;
-                }
-                break;
-        }
-        i++;
     }
 
     std::cout << "Handle order" << std::endl;
@@ -98,7 +102,7 @@ bool ShopMgr::HandlePurchaseOrder(std::string order)
     if (result)
     {
         std::cout << "order " << orderId << " already processed. skipping." << std::endl;
-        return false;
+        return true;
     }
 
     std::cout << "new order " << orderId << "." << std::endl;
