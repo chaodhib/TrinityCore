@@ -552,8 +552,7 @@ void MessagingMgr::Update(uint32 diff)
     ConsumeGearPurchaseEvents();
     this->producer->poll(0);
 
-    uint32 RESYNC_TIMER = 10 * 1000;
-    //uint32 RESYNC_TIMER = 3 * 3600 * 1000;
+    uint32 RESYNC_TIMER = 6 * 3600 * 1000; // @todo: externalize this property
     timeSinceLastResync += diff;
     if (timeSinceLastResync > RESYNC_TIMER)
     {
