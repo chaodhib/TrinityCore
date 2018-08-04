@@ -32,7 +32,7 @@ void EventCb::event_cb(RdKafka::Event &event) {
 
 void DeliveryReportCb::dr_cb(RdKafka::Message &message) {
     std::cout << "Message delivery for (" << message.len() << " bytes): " << message.errstr() << std::endl;
-    std::cout << message.err() << std::endl;
+    std::cout << "Message error code: " << message.err() << std::endl;
     std::cout << message.topic_name() << std::endl;
 
     if (message.err() == RdKafka::ErrorCode::ERR_NO_ERROR) {
