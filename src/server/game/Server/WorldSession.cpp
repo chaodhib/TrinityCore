@@ -660,7 +660,6 @@ std::string WorldSession::ConstructGearSnapshot() const
 
     // timestamp
     result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    result += '#';
 
     // add gear snapshot
     result += GetPlayer()->GetEquipmentSetList();

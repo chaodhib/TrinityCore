@@ -25468,10 +25468,10 @@ std::string Player::GetEquipmentSetList() const
     {
         if (Item *item = GetItemByPos(INVENTORY_SLOT_BAG_0, slotId))
         {
+            result += '#';
             result += std::to_string(slotId);
             result += ':';
             result += std::to_string(item->GetEntry()); // item template id
-            result += '|';
         }
     }
 
