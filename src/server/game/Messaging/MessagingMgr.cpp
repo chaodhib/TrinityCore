@@ -167,6 +167,19 @@ void MessagingMgr::HandleGearPurchaseMessage(RdKafka::Message &msg) {
     }
 }
 
+void MessagingMgr::SyncAccounts()
+{
+
+}
+
+void MessagingMgr::SyncCharactes()
+{
+}
+
+void MessagingMgr::SyncGearSnapshots()
+{
+}
+
 MessagingMgr::MessagingMgr()
 {
     InitProducer();
@@ -346,10 +359,29 @@ void MessagingMgr::ConsumeGearPurchaseEvents()
     delete msg;
 }
 
-void MessagingMgr::Update()
+void MessagingMgr::Update(uint32 diff)
 {
     ConsumeGearPurchaseEvents();
     this->producer->poll(0);
+
+    uint32 RESYNC_TIMER = 10 * 1000;
+    //uint32 RESYNC_TIMER = 3 * 3600 * 1000;
+    timeSinceLastResync += diff;
+    if (timeSinceLastResync > RESYNC_TIMER)
+    {
+        ResyncMessages();
+        timeSinceLastResync = 0;
+    }
+}
+
+void MessagingMgr::ResyncMessages()
+{
+    std::cout << "Kafka Resync process started" << std::endl;
+    SyncAccounts();
+    SyncCharactes();
+    SyncGearSnapshots();
+
+    std::cout << "Kafka Resync process finished" << std::endl;
 }
 
 MessagingMgr* MessagingMgr::instance()

@@ -36,14 +36,19 @@ class TC_GAME_API MessagingMgr
         void ConsumerSubscribe();
 
         void HandleGearPurchaseMessage(RdKafka::Message &msg);
+        void SyncAccounts();
+        void SyncCharactes();
+        void SyncGearSnapshots();
 
     public:
         static MessagingMgr* instance();
-        void Update();
+        void Update(uint32 diff);
         void SendGearSnapshot(std::string message);
         void SendAccountSnapshot(std::string message);
         void SendCharacter(std::string message);
         void ConsumeGearPurchaseEvents();
+
+        void ResyncMessages();
 
         static const std::string CHARACTER_TOPIC;
         static const std::string ACCOUNT_TOPIC;
@@ -57,6 +62,8 @@ class TC_GAME_API MessagingMgr
         RdKafka::Topic *gearSnapshotTopic;
         RdKafka::Topic *characterTopic;
         RdKafka::Topic *gearPurchaseTopic;
+
+        uint32 timeSinceLastResync = 0;
 
         DeliveryReportCb dr_cb;
         EventCb event_cb;

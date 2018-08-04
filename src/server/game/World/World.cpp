@@ -2135,8 +2135,11 @@ void World::SetInitialWorldSettings()
         });
     }
 
-    TC_LOG_INFO("server.loading", "Setting up Kafka producer...");
+    TC_LOG_INFO("server.loading", "Setting up Kafka producers and consumers...");
     sMessagingMgr->instance();
+
+    TC_LOG_INFO("server.loading", "Resyncing of pending Kafka messages...");
+    sMessagingMgr->ResyncMessages();
 
     uint32 startupDuration = GetMSTimeDiffToNow(startupBegin);
 
@@ -2430,7 +2433,7 @@ void World::Update(uint32 diff)
     sInstanceSaveMgr->Update();
 
     // kafka update
-    sMessagingMgr->Update();
+    sMessagingMgr->Update(diff);
 
     // Check for shutdown warning
     if (_guidWarn && !_guidAlert)
