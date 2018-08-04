@@ -579,10 +579,6 @@ std::string AccountMgr::ConstructAccountSnapshot(uint32 accountId, std::string u
     result += std::to_string(accountId);
     result += '#';
 
-    // timestamp
-    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
-    result += '#';
-
     // username
     result += username;
     result += '#';
