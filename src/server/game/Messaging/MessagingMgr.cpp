@@ -567,6 +567,7 @@ void MessagingMgr::ResyncMessages()
     SyncAccounts();
     SyncCharactes();
     SyncGearSnapshots();
+    SyncGearPurchaseAcks();
 
     std::cout << "Kafka Resync process finished" << std::endl;
 }
