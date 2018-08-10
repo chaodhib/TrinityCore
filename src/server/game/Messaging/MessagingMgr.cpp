@@ -1,4 +1,5 @@
 
+#include "Config.h"
 #include "MessagingMgr.h"
 #include "ShopMgr.h"
 #include <chrono>
@@ -345,7 +346,7 @@ MessagingMgr::~MessagingMgr()
 
 void MessagingMgr::InitProducer()
 {
-    std::string brokers = "localhost";
+    std::string brokers = sConfigMgr->GetStringDefault("Kafka.broker.list", "localhost:9092,localhost:9093,localhost:9094");
     std::string errstr;
 
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);
@@ -376,7 +377,7 @@ void MessagingMgr::InitProducer()
 
 void MessagingMgr::InitConsumer()
 {
-    std::string brokers = "localhost";
+    std::string brokers = sConfigMgr->GetStringDefault("Kafka.broker.list", "localhost:9092,localhost:9093,localhost:9094");
     std::string errstr;
 
     RdKafka::Conf *conf = RdKafka::Conf::create(RdKafka::Conf::CONF_GLOBAL);

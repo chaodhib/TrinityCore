@@ -3983,3 +3983,13 @@ Metric.OverallStatusInterval = 1
 
 #
 ###################################################################################################
+# KAFKA CONFIG
+#
+# Configure properties to exchange messages with the Kafka cluster
+#
+#	Kafka.broker.list
+#        Description: Set the URL list of the Kafka brokers
+#        Example:     "host:port,host:port,..."
+#        Default:     "localhost:9092,localhost:9093,localhost:9094"
+
+Kafka.broker.list = localhost:9092,localhost:9093,localhost:9094
