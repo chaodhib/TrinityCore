@@ -276,7 +276,7 @@ void MessagingMgr::SyncCharactes()
             std::string characterName = fields[2].GetString();
             uint8 characterClass = fields[3].GetInt8();
 
-            SendCharacter(accountId, characterId, characterName, characterClass);
+            SendCharacter(accountId, characterId, characterName, characterClass, true);
 
         } while (result->NextRow());
     }
@@ -518,9 +518,9 @@ void MessagingMgr::SendAccountSnapshot(uint32 accountId, std::string username, s
         std::cerr << "% Produced message (" << message.size() << " bytes)" << std::endl;
 }
 
-void MessagingMgr::SendCharacter(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass)
+void MessagingMgr::SendCharacter(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass, bool enabled)
 {
-    std::string message = std::to_string(accountId) + '#' + std::to_string(characterId) + '#' + characterName + '#' + std::to_string(characterClass);
+    std::string message = std::to_string(accountId) + '#' + std::to_string(characterId) + '#' + characterName + '#' + std::to_string(characterClass) + '#' + (enabled ? '1' : '0');
 
     RdKafka::ErrorCode resp = producer->produce(this->characterTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)

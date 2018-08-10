@@ -585,7 +585,7 @@ void WorldSession::HandleCharCreateOpcode(WorldPacket& recvData)
 
             LoginDatabase.CommitTransaction(trans);
 
-            sMessagingMgr->SendCharacter(GetAccountId(), newChar.GetGUID().GetCounter(), newChar.GetName(),  newChar.getClass());
+            sMessagingMgr->SendCharacter(GetAccountId(), newChar.GetGUID().GetCounter(), newChar.GetName(),  newChar.getClass(), true);
 
             SendCharCreate(CHAR_CREATE_SUCCESS);
 
@@ -673,6 +673,8 @@ void WorldSession::HandleCharDeleteOpcode(WorldPacket& recvData)
         if (PlayerDumpWriter().GetDump(guid.GetCounter(), dump))
             sLog->outCharDump(dump.c_str(), accountId, guid.GetRawValue(), name.c_str());
     }
+
+    sMessagingMgr->SendCharacter(accountId, guid.GetCounter(), name, characterInfo->Class, false);
 
     sCalendarMgr->RemoveAllPlayerEventsAndInvites(guid);
     Player::DeleteFromDB(guid, accountId);
