@@ -36,6 +36,7 @@ class TC_GAME_API MessagingMgr
         void ConsumerSubscribe();
 
         std::string ConstructAccountSnapshot(uint32 accountId, std::string username, std::string hashedPassword) const;
+        std::string ConstructCharacterSnapshot(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass, bool enabled) const;
 
         std::pair<uint32, uint32> ParseItemQuantityMapEntry(const std::string st);
         bool IsValidItemQuantityEntry(const std::string st);

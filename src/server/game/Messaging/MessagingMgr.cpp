@@ -490,12 +490,47 @@ std::string MessagingMgr::ConstructAccountSnapshot(uint32 accountId, std::string
     result += std::to_string(accountId);
     result += '#';
 
+    // timestamp
+    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    result += '#';
+
     // username
     result += username;
     result += '#';
 
     // hashedPassword
     result += hashedPassword;
+
+    return result;
+}
+
+std::string MessagingMgr::ConstructCharacterSnapshot(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass, bool enabled) const
+{
+
+    std::string result;
+
+    // character id
+    result += std::to_string(characterId);
+    result += '#';
+
+    // timestamp
+    result += std::to_string(std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count());
+    result += '#';
+
+    // account id
+    result += std::to_string(accountId);
+    result += '#';
+
+    // character name
+    result += characterName;
+    result += '#';
+
+    // character class id
+    result += std::to_string(characterClass);
+    result += '#';
+
+    // character enabled flag
+    result += (enabled ? '1' : '0');
 
     return result;
 }
@@ -521,7 +556,7 @@ void MessagingMgr::SendAccountSnapshot(uint32 accountId, std::string username, s
 
 void MessagingMgr::SendCharacter(uint32 accountId, uint32 characterId, std::string characterName, uint8 characterClass, bool enabled)
 {
-    std::string message = std::to_string(accountId) + '#' + std::to_string(characterId) + '#' + characterName + '#' + std::to_string(characterClass) + '#' + (enabled ? '1' : '0');
+    std::string message = ConstructCharacterSnapshot(accountId, characterId, characterName, characterClass, enabled);
 
     RdKafka::ErrorCode resp = producer->produce(this->characterTopic, RdKafka::Topic::PARTITION_UA, RdKafka::Producer::RK_MSG_COPY, const_cast<char *>(message.c_str()), message.size(), NULL, NULL);
     if (resp != RdKafka::ERR_NO_ERROR)
