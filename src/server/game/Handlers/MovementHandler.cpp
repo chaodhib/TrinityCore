@@ -679,6 +679,10 @@ void WorldSession::HandleTimeSyncResp(WorldPacket& recvData)
     int64 clockDelta = (int64)(serverTimeAtSent + lagDelay) - (int64)clientTimestamp;
     _timeSyncClockDeltaQueue.push_back(std::pair<int64, uint32>(clockDelta, roundTripDuration));
     ComputeNewClockDelta();
+
+    TC_LOG_ERROR("custom", "CMSG_TIME_SYNC_RESP. counter %u clientTimestamp %u serverTimeAtSent %u", counter, clientTimestamp, serverTimeAtSent);
+    TC_LOG_ERROR("custom", "CMSG_TIME_SYNC_RESP. roundTripDuration %u", roundTripDuration);
+    TC_LOG_ERROR("custom", "CMSG_TIME_SYNC_RESP. new delta: %i for player  %s", _timeSyncClockDelta, _player->GetName().c_str());
 }
 
 void WorldSession::ComputeNewClockDelta()
@@ -693,27 +697,41 @@ void WorldSession::ComputeNewClockDelta()
     for (auto pair : _timeSyncClockDeltaQueue)
         latencyAccumulator(pair.second);
 
+    TC_LOG_ERROR("custom", "-------------------------------------------");
+    TC_LOG_ERROR("custom", "queue content BEFORE");
+    for (std::pair<int64, uint32> pair : _timeSyncClockDeltaQueue)
+        TC_LOG_ERROR("custom", "%i / %u", pair.first, pair.second);
+
+    TC_LOG_ERROR("custom", "mean: %f", mean(latencyAccumulator));
+    TC_LOG_ERROR("custom", "median: %f", median(latencyAccumulator));
+    TC_LOG_ERROR("custom", "variance: %f", variance(latencyAccumulator));
+    TC_LOG_ERROR("custom", "std deviation: %f", sqrt(variance(latencyAccumulator)));
+
     uint32 latencyMedian = static_cast<uint32>(std::round(median(latencyAccumulator)));
     uint32 latencyStandardDeviation = static_cast<uint32>(std::round(sqrt(variance(latencyAccumulator))));
 
     accumulator_set<int64, features<tag::mean> > clockDeltasAfterFiltering;
+    TC_LOG_ERROR("custom", "queue content AFTER");
     uint32 sampleSizeAfterFiltering = 0;
     for (auto pair : _timeSyncClockDeltaQueue)
     {
         if (std::fabs(pair.second - latencyMedian) <= latencyStandardDeviation) {
             clockDeltasAfterFiltering(pair.first);
             sampleSizeAfterFiltering++;
+            TC_LOG_ERROR("custom", "%i / %u", pair.first, pair.second);
         }
     }
 
     if (sampleSizeAfterFiltering != 0)
     {
         int64 meanClockDelta = static_cast<int64>(std::round(mean(clockDeltasAfterFiltering)));
+        TC_LOG_ERROR("custom", "meanClockDelta: %i", meanClockDelta);
         if (std::fabs(meanClockDelta - _timeSyncClockDelta) > 25)
             _timeSyncClockDelta = meanClockDelta;
     }
     else if (_timeSyncClockDelta == 0)
     {
+        TC_LOG_ERROR("custom", "using fallback clockDelta");
         std::pair<int64, uint32> back = _timeSyncClockDeltaQueue.back();
         _timeSyncClockDelta = back.first;
     }
