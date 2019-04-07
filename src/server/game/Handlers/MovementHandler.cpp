@@ -726,7 +726,7 @@ void WorldSession::ComputeNewClockDelta()
     {
         int64 meanClockDelta = static_cast<int64>(std::round(mean(clockDeltasAfterFiltering)));
         TC_LOG_ERROR("custom", "meanClockDelta: %i", meanClockDelta);
-        if (std::fabs(meanClockDelta - _timeSyncClockDelta) > 25)
+        if (std::abs(meanClockDelta - _timeSyncClockDelta) > 25)
             _timeSyncClockDelta = meanClockDelta;
     }
     else if (_timeSyncClockDelta == 0)
