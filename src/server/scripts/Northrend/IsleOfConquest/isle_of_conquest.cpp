@@ -192,7 +192,7 @@ class spell_ioc_parachute_ic : public SpellScriptLoader
             {
                 PreventDefaultAction();
                 if (Player* target = GetTarget()->ToPlayer())
-                    if (target->m_movementInfo.fallTime > 2000 && !target->GetTransport())
+                    if (target->GetMovementInfo().fallTime > 2000 && !target->GetTransport())
                         target->CastSpell(target, SPELL_PARACHUTE_IC, true);
             }
 
