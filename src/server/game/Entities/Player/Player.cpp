@@ -22640,6 +22640,8 @@ void Player::SendInitialPacketsBeforeAddToMap()
     ResyncRunes();
 
     SetMovedUnit(this);
+
+    gameClientMovingMe = GetSession()->GetGameClient();
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
@@ -23957,6 +23959,15 @@ void Player::SetClientControl(Unit* target, bool allowMove)
     }
 
     SetMovedUnit(target);
+
+    GameClient *currentClient = GetSession()->GetGameClient();
+    if (!allowMove) {
+        if (target->gameClientMovingMe == currentClient)
+            target->gameClientMovingMe = nullptr;
+    }
+    else {
+        target->gameClientMovingMe = currentClient;
+    }
 }
 
 void Player::UpdateZoneDependentAuras(uint32 newZone)

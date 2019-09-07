@@ -37,6 +37,7 @@
 
 class BigNumber;
 class Creature;
+class GameClient;
 class GameObject;
 class InstanceSave;
 class Item;
@@ -309,6 +310,8 @@ class TC_GAME_API WorldSession
 
         void InitializeSession();
         void InitializeSessionCallback(SQLQueryHolder* realmHolder);
+
+        GameClient* GetGameClient() const { return _gameClient; };
 
         rbac::RBACData* GetRBACData();
         bool HasPermission(uint32 permissionId);
@@ -1116,6 +1119,7 @@ class TC_GAME_API WorldSession
         uint32 _timeSyncNextCounter;
         uint32 _timeSyncTimer;
 
+        GameClient* _gameClient;
 
         WorldSession(WorldSession const& right) = delete;
         WorldSession& operator=(WorldSession const& right) = delete;
