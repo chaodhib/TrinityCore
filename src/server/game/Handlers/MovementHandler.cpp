@@ -225,13 +225,13 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recvData)
         return;
     }
 
-    Unit* mover = ObjectAccessor::GetUnit(*_player, guid);
+    Player* plMover = _player->GetUnitBeingMoved()->ToPlayer();
 
     uint32 movementCounter, time;
     recvData >> movementCounter >> time;
 
     // verify that indeed the client is replying with the changes that were send to him
-    if (!mover->HasPendingMovementChange())
+    if (!plMover->HasPendingMovementChange())
     {
         TC_LOG_INFO("cheat", "WorldSession::HandleMoveTeleportAck: Player %s from account id %u kicked because no movement change ack was expected from this player",
             _player->GetName().c_str(), _player->GetSession()->GetAccountId());
@@ -239,7 +239,7 @@ void WorldSession::HandleMoveTeleportAck(WorldPacket& recvData)
         return;
     }
 
-    PlayerMovementPendingChange pendingChange = mover->PopPendingMovementChange();
+    PlayerMovementPendingChange pendingChange = plMover->PopPendingMovementChange();
     if (pendingChange.movementCounter != movementCounter || pendingChange.movementChangeType != TELEPORT)
     {
         TC_LOG_INFO("cheat", "WorldSession::HandleMoveTeleportAck: Player %s from account id %u kicked for incorrect data returned in an ack",
@@ -444,12 +444,11 @@ void WorldSession::HandleMovementOpcodes(WorldPacket& recvData)
         plrMover->SetInWater(!plrMover->IsInWater() || plrMover->GetBaseMap()->IsUnderWater(movementInfo.pos.GetPositionX(), movementInfo.pos.GetPositionY(), movementInfo.pos.GetPositionZ()));
     }
 
-    /* process position-change */
-
     // as strange as it may be, retail servers actually use MSG_MOVE_START_SWIM_CHEAT & MSG_MOVE_STOP_SWIM_CHEAT to respectively set and unset the 'Flying' movement flag. 
     // The only thing left to do is to move the handling of CMSG_MOVE_SET_FLY into a different handler
     if (opcode == CMSG_MOVE_SET_FLY)
         opcode = movementInfo.HasMovementFlag(MOVEMENTFLAG_FLYING) ? MSG_MOVE_START_SWIM_CHEAT : MSG_MOVE_STOP_SWIM_CHEAT;
+
     WorldPacket data(opcode, recvData.size());
     int64 movementTime = (int64) movementInfo.time + _timeSyncClockDelta;
     if (_timeSyncClockDelta == 0 || movementTime < 0 || movementTime > 0xFFFFFFFF)

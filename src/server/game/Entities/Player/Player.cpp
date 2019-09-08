@@ -22722,6 +22722,7 @@ void Player::SendInitialPacketsAfterAddToMap()
     {
         setCompoundState.put<uint32>(0, setCompoundState.size() - 4);
         SendDirectMessage(&setCompoundState);
+    }
 
     SendAurasForTarget(this);
     SendEnchantmentDurations();                             // must be after add to map

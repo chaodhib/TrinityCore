@@ -13496,6 +13496,18 @@ void Unit::ValidateMovementInfo(MovementInfo* mi)
     #undef CHECK_FOR_VIOLATING_FLAGS
 }
 
+void Unit::UpdateMovementInfo(MovementInfo movementInfo)
+{
+    if (!IsMovedByGameClient())
+    {
+        TC_LOG_ERROR("entities.unit", "Unit::UpdateMovementInfo call on a unit not moved by a player. This should not happen.");
+        return;
+    }
+
+    UpdatePosition(movementInfo.pos);
+    m_movementInfo = movementInfo;
+}
+
 // Returns collisionheight of the unit. If it is 0, it returns DEFAULT_COLLISION_HEIGHT.
 float Unit::ComputeCollisionHeight() const
 {
