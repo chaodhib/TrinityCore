@@ -42,6 +42,7 @@
 #include "DatabaseEnv.h"
 #include "DisableMgr.h"
 #include "Formulas.h"
+#include "GameClient.h"
 #include "GameEventMgr.h"
 #include "GameObjectAI.h"
 #include "GameTime.h"
@@ -22708,6 +22709,8 @@ void Player::SendInitialPacketsBeforeAddToMap()
     ResyncRunes();
 
     SetMovedUnit(this);
+
+    UodateClientControlPermissions(this, true);
 }
 
 void Player::SendInitialPacketsAfterAddToMap()
@@ -24025,6 +24028,29 @@ void Player::SetClientControl(Unit* target, bool allowMove)
     }
 
     SetMovedUnit(target);
+
+    UodateClientControlPermissions(target, allowMove);
+}
+
+void Player::UodateClientControlPermissions(Unit* target, bool allowMove)
+{
+    GameClient *currentClient = GetSession()->GetGameClient();
+    // set or unset link unit -> gameClient
+    if (!allowMove) {
+        if (target->gameClientMovingMe == currentClient)
+            target->gameClientMovingMe = nullptr;
+    }
+    else {
+        target->gameClientMovingMe = currentClient;
+    }
+
+    // set or unset link gameClient -> unit
+    if (!allowMove) {
+        currentClient->RemoveFromClientControlSet(target->GetGUID());
+    }
+    else {
+        currentClient->InsertIntoClientControlSet(target->GetGUID());
+    }
 }
 
 void Player::UpdateZoneDependentAuras(uint32 newZone)

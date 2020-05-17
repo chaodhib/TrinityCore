@@ -1973,6 +1973,7 @@ class TC_GAME_API Player : public Unit, public GridObject<Player>
         bool CanFlyInZone(uint32 mapid, uint32 zone, SpellInfo const* bySpell) const;
 
         void SetClientControl(Unit* target, bool allowMove);
+        void UodateClientControlPermissions(Unit* target, bool allowMove);
 
         void SetSeer(WorldObject* target) { m_seer = target; }
         void SetViewpoint(WorldObject* target, bool apply);
