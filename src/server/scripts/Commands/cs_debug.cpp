@@ -48,6 +48,7 @@ EndScriptData */
 #include <limits>
 #include <map>
 #include <set>
+#include "MoveSplineInit.h"
 
 using namespace Trinity::ChatCommands;
 class debug_commandscript : public CommandScript
@@ -118,6 +119,7 @@ public:
             { "neargraveyard", rbac::RBAC_PERM_COMMAND_NEARGRAVEYARD,       false, &HandleDebugNearGraveyard,           "" },
             { "instancespawn", rbac::RBAC_PERM_COMMAND_DEBUG_INSTANCESPAWN, false, &HandleDebugInstanceSpawns,          "" },
             { "dummy",         rbac::RBAC_PERM_COMMAND_DEBUG_DUMMY,         false, &HandleDebugDummyCommand,            "" },
+            { "dummy2",         rbac::RBAC_PERM_COMMAND_DEBUG_DUMMY,         false, &HandleDebugDummy2Command,            "" },
             { "asan",          rbac::RBAC_PERM_COMMAND_DEBUG_ASAN,          true,  nullptr,                             "", debugAsanCommandTable },
             { "guidlimits",    rbac::RBAC_PERM_COMMAND_DEBUG,               true,  &HandleDebugGuidLimitsCommand,       "" },
             { "questreset",    rbac::RBAC_PERM_COMMAND_DEBUG_QUESTRESET,    true,  &HandleDebugQuestResetCommand,       "" }
@@ -1946,7 +1948,45 @@ public:
 
     static bool HandleDebugDummyCommand(ChatHandler* handler, CommandArgs* /*args*/)
     {
-        handler->SendSysMessage("This command does nothing right now. Edit your local core (cs_debug.cpp) to make it do whatever you need for testing.");
+        //handler->SendSysMessage("This command does nothing right now. Edit your local core (cs_debug.cpp) to make it do whatever you need for testing.");
+
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!player)
+            return false;
+
+
+        //player->SetClientControl(player, false);
+
+        WorldPacket data(SMSG_CLIENT_CONTROL_UPDATE, player->GetPackGUID().size() + 1);
+        data << player->GetPackGUID();
+        data << uint8(0);
+        player->SendDirectMessage(&data);
+
+        player->SetFacingTo(player->GetOrientation());
+        //player->GetMotionMaster()->MoveFleeing()
+
+        return true;
+    }
+
+    static bool HandleDebugDummy2Command(ChatHandler* handler, CommandArgs* /*args*/)
+    {
+        //handler->SendSysMessage("This command does nothing right now. Edit your local core (cs_debug.cpp) to make it do whatever you need for testing.");
+
+        Player* player = handler->GetSession()->GetPlayer();
+        if (!player)
+            return false;
+
+
+        //player->StopMoving();
+
+        Movement::MoveSplineInit init(player);
+        init.Stop();
+
+        WorldPacket data(SMSG_CLIENT_CONTROL_UPDATE, player->GetPackGUID().size() + 1);
+        data << player->GetPackGUID();
+        data << uint8(1);
+        player->SendDirectMessage(&data);
+
         return true;
     }
 };
