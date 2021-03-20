@@ -24011,6 +24011,8 @@ void Player::ResurrectUsingRequestDataImpl()
 
 void Player::SetClientControl(Unit* target, bool allowMove)
 {
+    TC_LOG_INFO("custom", "SetClientControl() %s", target->GetName().c_str());
+
     // a player can never client control nothing
     ASSERT(target);
 

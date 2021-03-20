@@ -11435,6 +11435,8 @@ void Unit::SetFeared(bool apply)
         }
     }
 
+    TC_LOG_INFO("custom", "SetFeared()");
+
     // block / allow control to real player in control (eg charmer)
     if (GetTypeId() == TYPEID_PLAYER)
     {
